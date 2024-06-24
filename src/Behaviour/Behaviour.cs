@@ -10,6 +10,7 @@ public class BehaviourContext(ILogger logger)
     public string? Operation { get; init; }
     public string? Resource { get; init; }
     public object? Input { get; init; }
+    public Dictionary<string, object> State { get; } = [];
     public List<object> Events { get; } = [];
     public BehaviourResult? Result { get; set; }
 }
