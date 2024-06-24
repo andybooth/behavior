@@ -103,20 +103,19 @@ public partial class BehaviourRunner
             { nameof(context.Resource), context.Resource }
         };
 
-        using (var scope = context.Logger.BeginScope(loggerState))
+        using var scope = context.Logger.BeginScope(loggerState);
+
+        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
+        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
+        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.After);
+
+        if (sender is not null && context.Events.Count > 0)
         {
-            await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
-            await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
-            await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.After);
+            LogSendEventsBegin(context.Logger);
 
-            if (sender is not null && context.Events.Count > 0)
-            {
-                LogSendEventsBegin(context.Logger);
+            await sender(context.Events);
 
-                await sender(context.Events);
-
-                LogSendEventsEnd(context.Logger, context.Events.Count);
-            }
+            LogSendEventsEnd(context.Logger, context.Events.Count);
         }
 
         return context.Result ?? await BehaviourScenario.Ok();
@@ -147,22 +146,21 @@ public partial class BehaviourRunner
                 { nameof(scenario.ScenarioName), scenario.ScenarioName }
             };
 
-            using (var scope = context.Logger.BeginScope(loggerState))
+            using var scope = context.Logger.BeginScope(loggerState);
+
+            try
             {
-                try
-                {
-                    LogScenarioBegin(context.Logger);
+                LogScenarioBegin(context.Logger);
 
-                    context.Result = await scenario.ThenAsync(context);
+                context.Result = await scenario.ThenAsync(context);
 
-                    LogScenarioEnd(context.Logger, context.Result?.Code);
-                }
-                catch (Exception ex)
-                {
-                    LogScenarioError(context.Logger, ex);
+                LogScenarioEnd(context.Logger, context.Result?.Code);
+            }
+            catch (Exception ex)
+            {
+                LogScenarioError(context.Logger, ex);
 
-                    context.Result = await BehaviourScenario.Error();
-                }
+                context.Result = await BehaviourScenario.Error();
             }
 
             if (context.Result?.Continue == false)
