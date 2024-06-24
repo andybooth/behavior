@@ -6,6 +6,7 @@ namespace Behaviour;
 public class BehaviourContext(ILogger logger)
 {
     public ILogger Logger { get; } = logger;
+    public string CorrelationId { get; init; } = Guid.NewGuid().ToString();
     public IPrincipal? Principal { get; init; }
     public string? Operation { get; init; }
     public string? Resource { get; init; }
@@ -33,7 +34,7 @@ public enum BehaviourPhase
 
 public abstract class BehaviourFeature
 {
-    public virtual string Name => GetType().Name;
+    public virtual string FeatureName => GetType().Name;
     public virtual bool Given(BehaviourContext context) => true;
     public List<BehaviourScenario> Scenarios { get; init; } = [];
 }
@@ -48,7 +49,7 @@ public abstract class BehaviourFeature<TInput> : BehaviourFeature
 
 public abstract class BehaviourScenario
 {
-    public virtual string Name => GetType().Name;
+    public virtual string ScenarioName => GetType().Name;
     public virtual BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.On;
     public virtual bool When(BehaviourContext context) => true;
     public virtual Task<BehaviourResult> ThenAsync(BehaviourContext context) => Ok();
@@ -83,7 +84,7 @@ public partial class BehaviourRunner
     public static async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features, Func<string, bool>? featureFlags, Func<List<object>, Task>? sender = null)
     {
         var scenarios = features
-            .Where(f => featureFlags is null || featureFlags(f.Name) is true)
+            .Where(f => featureFlags is null || featureFlags(f.FeatureName) is true)
             .Where(f => f.Given(context))
             .SelectMany(f => f.Scenarios)
             .Select(s => (Phase: s.Given(context), Scenario: s))
@@ -95,13 +96,27 @@ public partial class BehaviourRunner
             return await BehaviourScenario.Error();
         }
 
-        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
-        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
-        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.After);
-
-        if (sender is not null)
+        var loggerState = new Dictionary<string, object?>
         {
-            await sender(context.Events);
+            { nameof(context.CorrelationId), context.CorrelationId },
+            { nameof(context.Operation), context.Operation },
+            { nameof(context.Resource), context.Resource }
+        };
+
+        using (var scope = context.Logger.BeginScope(loggerState))
+        {
+            await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
+            await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
+            await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.After);
+
+            if (sender is not null && context.Events.Count > 0)
+            {
+                LogSendEventsBegin(context.Logger);
+
+                await sender(context.Events);
+
+                LogSendEventsEnd(context.Logger, context.Events.Count);
+            }
         }
 
         return context.Result ?? await BehaviourScenario.Ok();
@@ -126,19 +141,28 @@ public partial class BehaviourRunner
                 continue;
             }
 
-            try
+            var loggerState = new Dictionary<string, object?>
             {
-                LogScenarioBegin(context.Logger, scenario.Name);
+                { nameof(BehaviourPhase), phase },
+                { nameof(scenario.ScenarioName), scenario.ScenarioName }
+            };
 
-                context.Result = await scenario.ThenAsync(context);
-
-                LogScenarioEnd(context.Logger, scenario.Name);
-            }
-            catch (Exception ex)
+            using (var scope = context.Logger.BeginScope(loggerState))
             {
-                LogScenarioError(context.Logger, ex, scenario.Name);
+                try
+                {
+                    LogScenarioBegin(context.Logger);
 
-                context.Result = await BehaviourScenario.Error();
+                    context.Result = await scenario.ThenAsync(context);
+
+                    LogScenarioEnd(context.Logger, context.Result?.Code);
+                }
+                catch (Exception ex)
+                {
+                    LogScenarioError(context.Logger, ex);
+
+                    context.Result = await BehaviourScenario.Error();
+                }
             }
 
             if (context.Result?.Continue == false)
@@ -148,12 +172,18 @@ public partial class BehaviourRunner
         }
     }
 
-    [LoggerMessage(EventId = 202, Level = LogLevel.Information, Message = "Begin {ScenarioName}")]
-    private static partial void LogScenarioBegin(ILogger logger, string scenarioName);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario Begin")]
+    private static partial void LogScenarioBegin(ILogger logger);
 
-    [LoggerMessage(EventId = 200, Level = LogLevel.Information, Message = "End {ScenarioName}")]
-    private static partial void LogScenarioEnd(ILogger logger, string scenarioName);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario End {Code}")]
+    private static partial void LogScenarioEnd(ILogger logger, int? code);
 
-    [LoggerMessage(EventId = 500, Level = LogLevel.Error, Message = "Error {ScenarioName}")]
-    private static partial void LogScenarioError(ILogger logger, Exception exception, string scenarioName);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Scenario Error")]
+    private static partial void LogScenarioError(ILogger logger, Exception exception);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Send Events Begin")]
+    private static partial void LogSendEventsBegin(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Send Events End {Count}")]
+    private static partial void LogSendEventsEnd(ILogger logger, int count);
 }
