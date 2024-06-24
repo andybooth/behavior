@@ -27,6 +27,7 @@ public class BehaviourResult
 public enum BehaviourPhase
 {
     None,
+    Initialize,
     Before,
     On,
     After
@@ -36,7 +37,7 @@ public abstract class BehaviourFeature
 {
     public virtual string FeatureName => GetType().Name;
     public virtual bool Given(BehaviourContext context) => true;
-    public List<BehaviourScenario> Scenarios { get; init; } = [];
+    public virtual List<BehaviourScenario> Scenarios { get; } = [];
 }
 
 public abstract class BehaviourFeature<TInput> : BehaviourFeature
@@ -55,8 +56,9 @@ public abstract class BehaviourScenario
     public virtual Task<BehaviourResult> ThenAsync(BehaviourContext context) => Ok();
 
     public static Task<BehaviourResult> Ok(object? output = null) => Task.FromResult(new BehaviourResult { Continue = true, Code = 200, Output = output });
-    public static Task<BehaviourResult> BadRequest(string message) => Task.FromResult(new BehaviourResult { Continue = false, Code = 400, Messages = [message] });
+    public static Task<BehaviourResult> BadRequest(string? message = null) => Task.FromResult(new BehaviourResult { Continue = false, Code = 400, Messages = [message!] });
     public static Task<BehaviourResult> Error() => Task.FromResult(new BehaviourResult { Continue = false, Code = 500 });
+    public static Task<BehaviourResult> Unauthorized() => Task.FromResult(new BehaviourResult { Continue = false, Code = 401 });
 }
 
 public abstract class BehaviourScenario<TInput> : BehaviourScenario
@@ -81,7 +83,7 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
 
 public partial class BehaviourRunner
 {
-    public static async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features, Func<string, bool>? featureFlags, Func<List<object>, Task>? sender = null)
+    public static async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features, Func<string, bool>? featureFlags = null, Func<List<object>, Task>? sender = null)
     {
         var scenarios = features
             .Where(f => featureFlags is null || featureFlags(f.FeatureName) is true)
@@ -105,6 +107,7 @@ public partial class BehaviourRunner
 
         using var scope = context.Logger.BeginScope(loggerState);
 
+        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Initialize);
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.After);
