@@ -32,8 +32,17 @@ public enum BehaviourPhase
 
 public abstract class BehaviourFeature
 {
+    public virtual string Name => GetType().Name;
     public virtual bool Given(BehaviourContext context) => true;
     public List<BehaviourScenario> Scenarios { get; init; } = [];
+}
+
+public abstract class BehaviourFeature<TInput> : BehaviourFeature
+{
+    public override bool Given(BehaviourContext context) => context.Input is TInput input
+        && Given(context, input);
+
+    public virtual bool Given(BehaviourContext context, TInput input) => true;
 }
 
 public abstract class BehaviourScenario
