@@ -79,9 +79,10 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
 
 public partial class BehaviourRunner
 {
-    public static async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features, Func<List<object>, Task>? sender = null)
+    public static async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features, Func<string, bool>? featureFlags, Func<List<object>, Task>? sender = null)
     {
         var scenarios = features
+            .Where(f => featureFlags is null || featureFlags(f.Name) is true)
             .Where(f => f.Given(context))
             .SelectMany(f => f.Scenarios)
             .ToLookup(s => s.Given(context));
