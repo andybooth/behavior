@@ -85,7 +85,14 @@ public partial class BehaviourRunner
             .Where(f => featureFlags is null || featureFlags(f.Name) is true)
             .Where(f => f.Given(context))
             .SelectMany(f => f.Scenarios)
-            .ToLookup(s => s.Given(context));
+            .Select(s => (Phase: s.Given(context), Scenario: s))
+            .Where(s => s.Phase is not BehaviourPhase.None)
+            .ToLookup(s => s.Phase, s => s.Scenario);
+
+        if (scenarios.Count == 0)
+        {
+            return await BehaviourScenario.Error();
+        }
 
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
