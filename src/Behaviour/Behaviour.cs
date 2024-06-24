@@ -59,11 +59,11 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
     public override bool When(BehaviourContext context) => context.Input is TInput input
         && When(context, input);
 
-    public abstract bool When(BehaviourContext context, TInput input);
+    public virtual bool When(BehaviourContext context, TInput input) => true;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.Input is TInput input
         ? ThenAsync(context, input)
-        : Ok();
+        : Error();
 
     public abstract Task<BehaviourResult> ThenAsync(BehaviourContext context, TInput input);
 }
