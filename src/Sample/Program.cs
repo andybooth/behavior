@@ -24,14 +24,13 @@ public record Product(bool ExistingUsers, int MinimumAge);
 
 public class SubmitApplicationFeature : BehaviourFeature<Application>
 {
-    public override List<BehaviourScenario> Scenarios => new()
-    {
+    public override List<BehaviourScenario> Scenarios => [
         new ProductLookup(),
         new AuthorizationPolicy(),
         new ApplicationValidation(),
         new AgeRestriction(),
         new ApplicationStore()
-    };
+    ];
 }
 
 public class ProductLookup : BehaviourScenario
