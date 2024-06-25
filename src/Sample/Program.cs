@@ -41,7 +41,7 @@ public class ProductLookup : BehaviourScenario
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
     {
         context.State["Product"] = new Product(ExistingUsers: true, MinimumAge: 18);
-        return Ok();
+        return context.Continue();
     }
 }
 
@@ -52,7 +52,7 @@ public class AuthorizationPolicy : BehaviourScenario
     public override bool When(BehaviourContext context)
         => context.Principal?.Identity?.IsAuthenticated == (context.State["Product"] as Product)!.ExistingUsers;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context) => Unauthorized();
+    public override Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.NotContinue();
 }
 
 public class AgeRestriction : BehaviourScenario<Application>
@@ -62,7 +62,7 @@ public class AgeRestriction : BehaviourScenario<Application>
     public override bool When(BehaviourContext context, Application input)
         => input.Age < (context.State["Product"] as Product)!.MinimumAge;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input) => BadRequest();
+    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input) => context.NotContinue();
 }
 
 public class ApplicationValidation : BehaviourScenario<Application>
@@ -72,7 +72,7 @@ public class ApplicationValidation : BehaviourScenario<Application>
     public override bool When(BehaviourContext context, Application input)
         => input.FirstName is null || input.LastName is null;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input) => BadRequest();
+    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input) => context.NotContinue();
 }
 
 public class ApplicationStore : BehaviourScenario<Application>
@@ -82,6 +82,6 @@ public class ApplicationStore : BehaviourScenario<Application>
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
     {
         Applications[context.CorrelationId] = input;
-        return Ok();
+        return context.Continue();
     }
 }

@@ -14,6 +14,18 @@ public class BehaviourContext(ILogger logger)
     public Dictionary<string, object> State { get; } = [];
     public List<object> Events { get; } = [];
     public BehaviourResult? Result { get; set; }
+
+    public Task<BehaviourResult> Continue(int code = 0, object? output = null)
+    {
+        Result = new BehaviourResult { Continue = true, Code = code, Output = output };
+        return Task.FromResult(Result);
+    }
+
+    public Task<BehaviourResult> NotContinue(int code = -1, object? output = null)
+    {
+        Result = new BehaviourResult { Continue = false, Code = code, Output = output };
+        return Task.FromResult(Result);
+    }
 }
 
 public class BehaviourResult
@@ -53,12 +65,7 @@ public abstract class BehaviourScenario
     public virtual string ScenarioName => GetType().Name;
     public virtual BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.On;
     public virtual bool When(BehaviourContext context) => true;
-    public virtual Task<BehaviourResult> ThenAsync(BehaviourContext context) => Ok();
-
-    public static Task<BehaviourResult> Ok(object? output = null) => Task.FromResult(new BehaviourResult { Continue = true, Code = 200, Output = output });
-    public static Task<BehaviourResult> BadRequest(string? message = null) => Task.FromResult(new BehaviourResult { Continue = false, Code = 400, Messages = [message!] });
-    public static Task<BehaviourResult> Error() => Task.FromResult(new BehaviourResult { Continue = false, Code = 500 });
-    public static Task<BehaviourResult> Unauthorized() => Task.FromResult(new BehaviourResult { Continue = false, Code = 401 });
+    public virtual Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.Continue();
 }
 
 public abstract class BehaviourScenario<TInput> : BehaviourScenario
@@ -76,7 +83,7 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.Input is TInput input
         ? ThenAsync(context, input)
-        : Error();
+        : context.NotContinue();
 
     public abstract Task<BehaviourResult> ThenAsync(BehaviourContext context, TInput input);
 }
@@ -95,7 +102,7 @@ public partial class BehaviourRunner
 
         if (scenarios.Count == 0)
         {
-            return await BehaviourScenario.Error();
+            return await context.NotContinue();
         }
 
         var loggerState = new Dictionary<string, object?>
@@ -121,7 +128,7 @@ public partial class BehaviourRunner
             LogSendEventsEnd(context.Logger, context.Events.Count);
         }
 
-        return context.Result ?? await BehaviourScenario.Ok();
+        return await context.Continue();
     }
 
     private static async Task ExecuteScenariosAsync(BehaviourContext context, ILookup<BehaviourPhase, BehaviourScenario> scenarios, BehaviourPhase phase)
@@ -163,7 +170,7 @@ public partial class BehaviourRunner
             {
                 LogScenarioError(context.Logger, ex);
 
-                context.Result = await BehaviourScenario.Error();
+                await context.NotContinue();
             }
 
             if (context.Result?.Continue == false)
