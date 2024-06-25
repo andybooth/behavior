@@ -101,19 +101,6 @@ public partial class BehaviourRunner
 {
     public static async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features, Func<string, bool>? featureFlags = null, Func<List<object>, Task>? sender = null)
     {
-        var scenarios = features
-            .Where(f => featureFlags is null || featureFlags(f.FeatureName) is true)
-            .Where(f => f.Given(context))
-            .SelectMany(f => f.Scenarios)
-            .Select(s => (Phase: s.Given(context), Scenario: s))
-            .Where(s => s.Phase is not BehaviourPhase.None)
-            .ToLookup(s => s.Phase, s => s.Scenario);
-
-        if (scenarios.Count == 0)
-        {
-            return await context.NotContinue();
-        }
-
         var loggerState = new Dictionary<string, object?>
         {
             { nameof(context.CorrelationId), context.CorrelationId },
@@ -122,6 +109,21 @@ public partial class BehaviourRunner
         };
 
         using var scope = context.Logger.BeginScope(loggerState);
+
+        var scenarios = features
+            .Where(f => featureFlags is null || featureFlags(f.FeatureName) is true)
+            .Where(f => f.Given(context))
+            .SelectMany(f => f.Scenarios)
+            .Select(s => (Phase: s.Given(context), Scenario: s))
+            .Where(s => s.Phase is not BehaviourPhase.None)
+            .ToLookup(s => s.Phase, s => s.Scenario);
+
+        LogScenarioRunner(context.Logger, scenarios.Count);
+
+        if (scenarios.Count == 0)
+        {
+            return await context.NotContinue();
+        }
 
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Initialize);
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
@@ -147,7 +149,7 @@ public partial class BehaviourRunner
             return;
         }
 
-        if (context.Result?.Continue == false)
+        if (context.Result?.Continue is false)
         {
             return;
         }
@@ -182,12 +184,15 @@ public partial class BehaviourRunner
                 await context.NotContinue();
             }
 
-            if (context.Result?.Continue == false)
+            if (context.Result?.Continue is false)
             {
                 return;
             }
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario Runner {Count}")]
+    private static partial void LogScenarioRunner(ILogger logger, int count);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Scenario Begin")]
     private static partial void LogScenarioBegin(ILogger logger);
