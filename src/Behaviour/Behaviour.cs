@@ -26,6 +26,15 @@ public class BehaviourContext(ILogger logger)
         Result = new BehaviourResult { Continue = false, Code = code, Output = output };
         return Task.FromResult(Result);
     }
+
+    public void SetState<TState>(TState item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        State.Add(nameof(TState), item);
+    }
+
+    public TState GetState<TState>() where TState : class
+        => State.GetValueOrDefault(nameof(TState)) as TState ?? throw new KeyNotFoundException(nameof(TState));
 }
 
 public class BehaviourResult

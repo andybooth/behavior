@@ -39,7 +39,7 @@ public class ProductLookup : BehaviourScenario
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
     {
-        context.State["Product"] = new Product(ExistingUsers: true, MinimumAge: 18);
+        context.SetState(new Product(ExistingUsers: true, MinimumAge: 18));
         return context.Continue();
     }
 }
@@ -49,7 +49,7 @@ public class AuthorizationPolicy : BehaviourScenario
     public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Before;
 
     public override bool When(BehaviourContext context)
-        => context.Principal?.Identity?.IsAuthenticated == (context.State["Product"] as Product)!.ExistingUsers;
+        => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUsers;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.NotContinue();
 }
@@ -59,7 +59,7 @@ public class AgeRestriction : BehaviourScenario<Application>
     public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Before;
 
     public override bool When(BehaviourContext context, Application input)
-        => input.Age < (context.State["Product"] as Product)!.MinimumAge;
+        => input.Age < context.GetState<Product>().MinimumAge;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input) => context.NotContinue();
 }
