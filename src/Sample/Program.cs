@@ -40,7 +40,7 @@ public class ProductLookup : BehaviourScenario
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
     {
         context.SetState(new Product(ExistingUsers: true, MinimumAge: 18));
-        return context.Continue();
+        return context.Next();
     }
 }
 
@@ -52,7 +52,7 @@ public class AuthorizationPolicy : BehaviourScenario
         => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUsers;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
-        => context.NotContinue(code: 401);
+        => context.Complete(code: 401);
 }
 
 public class AgeRestriction : BehaviourScenario<Application>
@@ -63,7 +63,7 @@ public class AgeRestriction : BehaviourScenario<Application>
         => input.Age < context.GetState<Product>().MinimumAge;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
-        => context.NotContinue(code: 400, message: $"Minimum age {context.GetState<Product>().MinimumAge}");
+        => context.Complete(code: 400, message: $"Minimum age {context.GetState<Product>().MinimumAge}");
 }
 
 public class ApplicationValidation : BehaviourScenario<Application>
@@ -74,7 +74,7 @@ public class ApplicationValidation : BehaviourScenario<Application>
         => input.FirstName is null || input.LastName is null;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
-        => context.NotContinue(code: 400, message: "First and last name required");
+        => context.Complete(code: 400, message: "First and last name required");
 }
 
 public class ApplicationStore : BehaviourScenario<Application>
@@ -83,7 +83,8 @@ public class ApplicationStore : BehaviourScenario<Application>
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
     {
-        Applications[context.CorrelationId] = input;
-        return context.Continue(code: 200);
+        var applicationId = Guid.NewGuid().ToString();
+        Applications[applicationId] = input;
+        return context.Complete(code: 200, output: applicationId);
     }
 }

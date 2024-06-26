@@ -15,15 +15,15 @@ public class BehaviourContext(ILogger logger)
     public List<object> Events { get; } = [];
     public BehaviourResult? Result { get; set; }
 
-    public Task<BehaviourResult> Continue(int? code = null, string? message = null, object? output = null)
+    public Task<BehaviourResult> Next(int? code = null, string? message = null, object? output = null)
     {
-        Result = BehaviourResult.Build(Result, true, code, message, output);
+        Result = BehaviourResult.Build(Result, false, code, message, output);
         return Task.FromResult(Result);
     }
 
-    public Task<BehaviourResult> NotContinue(int? code = null, string? message = null, object? output = null)
+    public Task<BehaviourResult> Complete(int? code = null, string? message = null, object? output = null)
     {
-        Result = BehaviourResult.Build(Result, false, code, message, output);
+        Result = BehaviourResult.Build(Result, true, code, message, output);
         return Task.FromResult(Result);
     }
 
@@ -36,17 +36,17 @@ public class BehaviourContext(ILogger logger)
 
 public class BehaviourResult
 {
-    public bool Continue { get; init; } = true;
-    public int Code { get; init; } = 0;
+    public bool IsComplete { get; init; } = false;
+    public int? Code { get; init; }
     public List<string> Messages { get; init; } = [];
     public object? Output { get; init; }
 
-    public static BehaviourResult Build(BehaviourResult? existing, bool continueRunning, int? code = null, string? message = null, object? output = null)
+    public static BehaviourResult Build(BehaviourResult? existing, bool isComplete, int? code = null, string? message = null, object? output = null)
     {
         var result = new BehaviourResult
         {
-            Continue = continueRunning,
-            Code = code ?? existing?.Code ?? 0,
+            IsComplete = isComplete,
+            Code = code ?? existing?.Code,
             Messages = existing?.Messages ?? [],
             Output = output ?? existing?.Output
         };
@@ -89,7 +89,7 @@ public abstract class BehaviourScenario
     public virtual string ScenarioName => GetType().Name;
     public virtual BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.On;
     public virtual bool When(BehaviourContext context) => true;
-    public virtual Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.Continue();
+    public virtual Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.Next();
 }
 
 public abstract class BehaviourScenario<TInput> : BehaviourScenario
@@ -107,7 +107,7 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.Input is TInput input
         ? ThenAsync(context, input)
-        : context.NotContinue();
+        : context.Complete();
 
     public abstract Task<BehaviourResult> ThenAsync(BehaviourContext context, TInput input);
 }
@@ -137,7 +137,7 @@ public partial class BehaviourRunner
 
         if (scenarios.Count == 0)
         {
-            return await context.NotContinue();
+            return await context.Complete();
         }
 
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Initialize);
@@ -154,7 +154,7 @@ public partial class BehaviourRunner
             LogSendEventsEnd(context.Logger, context.Events.Count);
         }
 
-        return await context.Continue();
+        return await context.Next();
     }
 
     private static async Task ExecuteScenariosAsync(BehaviourContext context, ILookup<BehaviourPhase, BehaviourScenario> scenarios, BehaviourPhase phase)
@@ -164,7 +164,7 @@ public partial class BehaviourRunner
             return;
         }
 
-        if (context.Result?.Continue is false)
+        if (context.Result?.IsComplete is true)
         {
             return;
         }
@@ -196,10 +196,10 @@ public partial class BehaviourRunner
             {
                 LogScenarioError(context.Logger, ex);
 
-                context.Result = await context.NotContinue(-1);
+                context.Result = await context.Complete();
             }
 
-            if (context.Result?.Continue is false)
+            if (context.Result?.IsComplete is true)
             {
                 return;
             }

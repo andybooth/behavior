@@ -15,7 +15,7 @@ public class BehaviourRunnerTests
 
         scenario.Given(context).Returns(BehaviourPhase.On);
         scenario.When(context).Returns(true);
-        scenario.ThenAsync(context).Returns(context.Continue(output: output));
+        scenario.ThenAsync(context).Returns(_ => context.Complete(output: output));
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
@@ -42,27 +42,27 @@ public class BehaviourRunnerTests
 
         scenario1.Given(context).Returns(BehaviourPhase.None);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue());
+        scenario1.ThenAsync(context).Returns(_ => context.Next());
 
         scenario2.Given(context).Returns(BehaviourPhase.Before);
         scenario2.When(context).Returns(true);
-        scenario2.ThenAsync(context).Returns(context.Continue());
+        scenario2.ThenAsync(context).Returns(_ => context.Next());
 
         scenario3.Given(context).Returns(BehaviourPhase.On);
         scenario3.When(context).Returns(true);
-        scenario3.ThenAsync(context).Returns(context.Continue());
+        scenario3.ThenAsync(context).Returns(_ => context.Next());
 
         scenario4.Given(context).Returns(BehaviourPhase.On);
         scenario4.When(context).Returns(true);
-        scenario4.ThenAsync(context).Returns(context.Continue());
+        scenario4.ThenAsync(context).Returns(_ => context.Next(output: output));
 
         scenario5.Given(context).Returns(BehaviourPhase.On);
         scenario5.When(context).Returns(false);
-        scenario5.ThenAsync(context).Returns(context.Continue(output: output));
+        scenario5.ThenAsync(context).Returns(_ => context.Next());
 
         scenario6.Given(context).Returns(BehaviourPhase.After);
         scenario6.When(context).Returns(true);
-        scenario6.ThenAsync(context).Returns(context.Continue());
+        scenario6.ThenAsync(context).Returns(_ => context.Complete());
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
@@ -91,15 +91,15 @@ public class BehaviourRunnerTests
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
+        scenario1.ThenAsync(context).Returns(_ => context.Next(output: output));
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(false);
-        scenario2.ThenAsync(context).Returns(context.Continue());
+        scenario2.ThenAsync(context).Returns(_ => context.Next());
 
         scenario3.Given(context).Returns(BehaviourPhase.On);
         scenario3.When(context).Returns(true);
-        scenario3.ThenAsync(context).Returns(context.Continue());
+        scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
@@ -125,7 +125,7 @@ public class BehaviourRunnerTests
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
+        scenario1.ThenAsync(context).Returns(_ => context.Next(output: output));
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
@@ -133,7 +133,7 @@ public class BehaviourRunnerTests
 
         scenario3.Given(context).Returns(BehaviourPhase.On);
         scenario3.When(context).Returns(true);
-        scenario3.ThenAsync(context).Returns(context.Continue());
+        scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
@@ -159,15 +159,15 @@ public class BehaviourRunnerTests
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
+        scenario1.ThenAsync(context).Returns(_ => context.Next(output: output));
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
-        scenario2.ThenAsync(context).Returns(context.NotContinue());
+        scenario2.ThenAsync(context).Returns(_ => context.Complete());
 
         scenario3.Given(context).Returns(BehaviourPhase.On);
         scenario3.When(context).Returns(true);
-        scenario3.ThenAsync(context).Returns(context.Continue());
+        scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
@@ -201,15 +201,15 @@ public class BehaviourRunnerTests
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
+        scenario1.ThenAsync(context).Returns(_ => context.Next());
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
-        scenario2.ThenAsync(context).Returns(context.Continue());
+        scenario2.ThenAsync(context).Returns(_ => context.Next(output: output));
 
         scenario3.Given(context).Returns(BehaviourPhase.On);
         scenario3.When(context).Returns(true);
-        scenario3.ThenAsync(context).Returns(context.Continue());
+        scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3]);
 
@@ -246,15 +246,15 @@ public class BehaviourRunnerTests
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue());
+        scenario1.ThenAsync(context).Returns(_ => context.Next());
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
-        scenario2.ThenAsync(context).Returns(context.Continue(output: output));
+        scenario2.ThenAsync(context).Returns(_ => context.Next(output: output));
 
         scenario3.Given(context).Returns(BehaviourPhase.On);
         scenario3.When(context).Returns(true);
-        scenario3.ThenAsync(context).Returns(context.Continue());
+        scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3], featureName => featureName != "Feature1");
 
