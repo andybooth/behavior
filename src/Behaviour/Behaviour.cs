@@ -119,7 +119,7 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
 
 public partial class BehaviourRunner
 {
-    public virtual bool IsFeatureEnabled(string featureName) => true;
+    public virtual bool HasFeatureFlag(string featureName) => true;
 
     public async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features)
     {
@@ -133,7 +133,7 @@ public partial class BehaviourRunner
         using var scope = context.Logger.BeginScope(loggerState);
 
         var scenarios = features
-            .Where(f => IsFeatureEnabled(f.FeatureName))
+            .Where(f => HasFeatureFlag(f.FeatureName))
             .Where(f => f.Given(context))
             .SelectMany(f => f.Scenarios)
             .Select(s => (Phase: s.Given(context), Scenario: s))

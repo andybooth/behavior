@@ -269,7 +269,7 @@ public class BehaviourRunnerTests
 
     public class MockBehaviourRunner : BehaviourRunner
     {
-        public override bool IsFeatureEnabled(string featureName) => featureName != "feature1";
+        public override bool HasFeatureFlag(string featureName) => featureName != "feature1";
     }
 
     [Fact]
