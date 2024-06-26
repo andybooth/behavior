@@ -51,7 +51,8 @@ public class AuthorizationPolicy : BehaviourScenario
     public override bool When(BehaviourContext context)
         => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUsers;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context) => context.NotContinue();
+    public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
+        => context.NotContinue(code: 401);
 }
 
 public class AgeRestriction : BehaviourScenario<Application>
@@ -61,7 +62,8 @@ public class AgeRestriction : BehaviourScenario<Application>
     public override bool When(BehaviourContext context, Application input)
         => input.Age < context.GetState<Product>().MinimumAge;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input) => context.NotContinue();
+    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
+        => context.NotContinue(code: 400, message: $"Minimum age {context.GetState<Product>().MinimumAge}");
 }
 
 public class ApplicationValidation : BehaviourScenario<Application>
@@ -71,7 +73,8 @@ public class ApplicationValidation : BehaviourScenario<Application>
     public override bool When(BehaviourContext context, Application input)
         => input.FirstName is null || input.LastName is null;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input) => context.NotContinue();
+    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
+        => context.NotContinue(code: 400, message: "First and last name required");
 }
 
 public class ApplicationStore : BehaviourScenario<Application>
@@ -81,6 +84,6 @@ public class ApplicationStore : BehaviourScenario<Application>
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
     {
         Applications[context.CorrelationId] = input;
-        return context.Continue();
+        return context.Continue(code: 200);
     }
 }
