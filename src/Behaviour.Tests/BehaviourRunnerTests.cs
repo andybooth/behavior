@@ -1,4 +1,6 @@
-﻿namespace Behaviour.Tests;
+﻿using Microsoft.Extensions.Logging;
+
+namespace Behaviour.Tests;
 
 public class BehaviourRunnerTests
 {
@@ -263,5 +265,65 @@ public class BehaviourRunnerTests
         Assert.NotNull(scenario1.DidNotReceive().ThenAsync(context));
         Assert.NotNull(scenario2.Received(1).ThenAsync(context));
         Assert.NotNull(scenario3.Received(1).ThenAsync(context));
+    }
+
+    [Fact]
+    public async Task BehaviourRunner_LogScenario_BeginAndEnd()
+    {
+        var logger = Substitute.For<MockLogger>();
+        var context = new BehaviourContext(logger);
+        var feature = Substitute.For<BehaviourFeature>();
+        var scenario1 = Substitute.For<BehaviourScenario>();
+        var scenario2 = Substitute.For<BehaviourScenario>();
+        var output = new object();
+
+        feature.Given(context).Returns(true);
+        feature.Scenarios.Returns([scenario1, scenario2]);
+
+        scenario1.ScenarioName.Returns(nameof(scenario1));
+        scenario1.Given(context).Returns(BehaviourPhase.On);
+        scenario1.When(context).Returns(true);
+        scenario1.ThenAsync(context).Returns(_ => context.Next());
+
+        scenario2.ScenarioName.Returns(nameof(scenario2));
+        scenario2.Given(context).Returns(BehaviourPhase.On);
+        scenario2.When(context).Returns(true);
+        scenario2.ThenAsync(context).Returns(_ => context.Complete(output: output));
+
+        var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
+
+        Assert.True(logger.HasLogScenarioBegin(nameof(scenario1)));
+        Assert.True(logger.HasLogScenarioEnd(nameof(scenario1)));
+        Assert.True(logger.HasLogScenarioBegin(nameof(scenario2)));
+        Assert.True(logger.HasLogScenarioEnd(nameof(scenario2)));
+    }
+}
+
+public abstract class MockLogger : ILogger
+{
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+        Log(logLevel, formatter(state, exception));
+    }
+
+    public abstract void Log(LogLevel logLevel, string message);
+
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
+    {
+        return null;
+    }
+
+    public bool HasLogScenarioBegin(string scenarioName)
+    {
+        this.Received(1).Log(LogLevel.Information, $"Scenario '{scenarioName}' Begin");
+        return true;
+    }
+
+    public bool HasLogScenarioEnd(string scenarioName)
+    {
+        this.Received(1).Log(LogLevel.Information, $"Scenario '{scenarioName}' End");
+        return true;
     }
 }

@@ -133,8 +133,6 @@ public partial class BehaviourRunner
             .Where(s => s.Phase is not BehaviourPhase.None)
             .ToLookup(s => s.Phase, s => s.Scenario);
 
-        LogScenarioRunner(context.Logger, scenarios.Count);
-
         if (scenarios.Count == 0)
         {
             return await context.Complete();
@@ -147,11 +145,7 @@ public partial class BehaviourRunner
 
         if (sender is not null && context.Events.Count > 0)
         {
-            LogSendEventsBegin(context.Logger);
-
             await sender(context.Events);
-
-            LogSendEventsEnd(context.Logger, context.Events.Count);
         }
 
         return await context.Next();
@@ -178,23 +172,22 @@ public partial class BehaviourRunner
 
             var loggerState = new Dictionary<string, object?>
             {
-                { nameof(BehaviourPhase), phase },
-                { nameof(scenario.ScenarioName), scenario.ScenarioName }
+                { nameof(BehaviourPhase), phase }
             };
 
             using var scope = context.Logger.BeginScope(loggerState);
 
             try
             {
-                LogScenarioBegin(context.Logger);
+                LogScenarioBegin(context.Logger, scenario.ScenarioName);
 
                 context.Result = await scenario.ThenAsync(context);
 
-                LogScenarioEnd(context.Logger, context.Result?.Code);
+                LogScenarioEnd(context.Logger, scenario.ScenarioName);
             }
             catch (Exception ex)
             {
-                LogScenarioError(context.Logger, ex);
+                LogScenarioError(context.Logger, ex, scenario.ScenarioName);
 
                 context.Result = await context.Complete();
             }
@@ -206,21 +199,12 @@ public partial class BehaviourRunner
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario Runner {Count}")]
-    private static partial void LogScenarioRunner(ILogger logger, int count);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario '{ScenarioName}' Begin")]
+    private static partial void LogScenarioBegin(ILogger logger, string scenarioName);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario Begin")]
-    private static partial void LogScenarioBegin(ILogger logger);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario '{ScenarioName}' End")]
+    private static partial void LogScenarioEnd(ILogger logger, string scenarioName);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Scenario End {Code}")]
-    private static partial void LogScenarioEnd(ILogger logger, int? code);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Scenario Error")]
-    private static partial void LogScenarioError(ILogger logger, Exception exception);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Send Events Begin")]
-    private static partial void LogSendEventsBegin(ILogger logger);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Send Events End {Count}")]
-    private static partial void LogSendEventsEnd(ILogger logger, int count);
+    [LoggerMessage(Level = LogLevel.Error, Message = "Scenario '{ScenarioName}' Error")]
+    private static partial void LogScenarioError(ILogger logger, Exception exception, string scenarioName);
 }
