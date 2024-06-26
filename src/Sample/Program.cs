@@ -22,6 +22,8 @@ public record Application(string FirstName, string LastName, int Age);
 
 public record Product(bool ExistingUsers, int MinimumAge);
 
+public record CreatedApplication(string applicationId);
+
 public class SubmitApplicationFeature : BehaviourFeature<Application>
 {
     public override List<BehaviourScenario> Scenarios => [
@@ -29,7 +31,8 @@ public class SubmitApplicationFeature : BehaviourFeature<Application>
         new AuthorizationPolicy(),
         new ApplicationValidation(),
         new AgeRestriction(),
-        new ApplicationStore()
+        new ApplicationStore(),
+        new AuditLog()
     ];
 }
 
@@ -79,12 +82,26 @@ public class ApplicationValidation : BehaviourScenario<Application>
 
 public class ApplicationStore : BehaviourScenario<Application>
 {
-    private static readonly ConcurrentDictionary<string, Application> Applications = [];
+    private static readonly ConcurrentDictionary<string, Application> Store = [];
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
     {
         var applicationId = Guid.NewGuid().ToString();
-        Applications[applicationId] = input;
-        return context.Complete(code: 200, output: applicationId);
+        Store[applicationId] = input;
+        context.Events.Add(new CreatedApplication(applicationId));
+        return context.Next(code: 200, output: applicationId);
+    }
+}
+
+public class AuditLog : BehaviourScenario
+{
+    private static readonly ConcurrentDictionary<string, string> Store = [];
+
+    public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.After;
+
+    public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
+    {
+        Store[context.CorrelationId] = $"Application {context.Result!.Output} created by {context.Principal!.Identity!.Name}";
+        return base.ThenAsync(context);
     }
 }
