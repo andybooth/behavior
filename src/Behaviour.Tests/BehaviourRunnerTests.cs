@@ -232,15 +232,15 @@ public class BehaviourRunnerTests
         var scenario3 = Substitute.For<BehaviourScenario>();
         var output = new object();
 
-        feature1.FeatureName.Returns("Feature1");
+        feature1.FeatureName.Returns(nameof(feature1));
         feature1.Given(context).Returns(true);
         feature1.Scenarios.Returns([scenario1]);
 
-        feature2.FeatureName.Returns("Feature2");
+        feature2.FeatureName.Returns(nameof(feature2));
         feature2.Given(context).Returns(true);
         feature2.Scenarios.Returns([scenario2]);
 
-        feature3.FeatureName.Returns("Feature3");
+        feature3.FeatureName.Returns(nameof(feature3));
         feature3.Given(context).Returns(true);
         feature3.Scenarios.Returns([scenario3]);
 
@@ -256,7 +256,7 @@ public class BehaviourRunnerTests
         scenario3.When(context).Returns(true);
         scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3], featureName => featureName != "Feature1");
+        var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3], featureName => featureName != nameof(feature1));
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
