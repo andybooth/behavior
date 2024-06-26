@@ -8,17 +8,19 @@ public class BehaviourRunnerTests
         var context = new BehaviourContext(NullLogger.Instance);
         var feature = Substitute.For<BehaviourFeature>();
         var scenario = Substitute.For<BehaviourScenario>();
+        var output = new object();
 
         feature.Given(context).Returns(true);
         feature.Scenarios.Returns([scenario]);
 
         scenario.Given(context).Returns(BehaviourPhase.On);
         scenario.When(context).Returns(true);
-        scenario.ThenAsync(context).Returns(context.Continue());
+        scenario.ThenAsync(context).Returns(context.Continue(output: output));
 
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
+        Assert.Equal(output, result.Output);
         Assert.NotNull(scenario.Received(1).ThenAsync(context));
     }
 
@@ -33,6 +35,7 @@ public class BehaviourRunnerTests
         var scenario4 = Substitute.For<BehaviourScenario>();
         var scenario5 = Substitute.For<BehaviourScenario>();
         var scenario6 = Substitute.For<BehaviourScenario>();
+        var output = new object();
 
         feature.Given(context).Returns(true);
         feature.Scenarios.Returns([scenario1, scenario2, scenario3, scenario4, scenario5, scenario6]);
@@ -55,7 +58,7 @@ public class BehaviourRunnerTests
 
         scenario5.Given(context).Returns(BehaviourPhase.On);
         scenario5.When(context).Returns(false);
-        scenario5.ThenAsync(context).Returns(context.Continue());
+        scenario5.ThenAsync(context).Returns(context.Continue(output: output));
 
         scenario6.Given(context).Returns(BehaviourPhase.After);
         scenario6.When(context).Returns(true);
@@ -64,6 +67,7 @@ public class BehaviourRunnerTests
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
+        Assert.Equal(output, result.Output);
         Assert.NotNull(scenario1.DidNotReceive().ThenAsync(context));
         Assert.NotNull(scenario2.Received(1).ThenAsync(context));
         Assert.NotNull(scenario3.Received(1).ThenAsync(context));
@@ -80,13 +84,14 @@ public class BehaviourRunnerTests
         var scenario1 = Substitute.For<BehaviourScenario>();
         var scenario2 = Substitute.For<BehaviourScenario>();
         var scenario3 = Substitute.For<BehaviourScenario>();
+        var output = new object();
 
         feature.Given(context).Returns(true);
         feature.Scenarios.Returns([scenario1, scenario2, scenario3]);
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue());
+        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(false);
@@ -99,6 +104,7 @@ public class BehaviourRunnerTests
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
+        Assert.Equal(output, result.Output);
         Assert.NotNull(scenario1.Received(1).ThenAsync(context));
         Assert.NotNull(scenario2.DidNotReceive().ThenAsync(context));
         Assert.NotNull(scenario3.Received(1).ThenAsync(context));
@@ -112,13 +118,14 @@ public class BehaviourRunnerTests
         var scenario1 = Substitute.For<BehaviourScenario>();
         var scenario2 = Substitute.For<BehaviourScenario>();
         var scenario3 = Substitute.For<BehaviourScenario>();
+        var output = new object();
 
         feature.Given(context).Returns(true);
         feature.Scenarios.Returns([scenario1, scenario2, scenario3]);
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue());
+        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
@@ -131,6 +138,7 @@ public class BehaviourRunnerTests
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
+        Assert.Equal(output, result.Output);
         Assert.NotNull(scenario1.Received(1).ThenAsync(context));
         Assert.NotNull(scenario2.Received(1).ThenAsync(context));
         Assert.NotNull(scenario3.DidNotReceive().ThenAsync(context));
@@ -144,13 +152,14 @@ public class BehaviourRunnerTests
         var scenario1 = Substitute.For<BehaviourScenario>();
         var scenario2 = Substitute.For<BehaviourScenario>();
         var scenario3 = Substitute.For<BehaviourScenario>();
+        var output = new object();
 
         feature.Given(context).Returns(true);
         feature.Scenarios.Returns([scenario1, scenario2, scenario3]);
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue());
+        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
@@ -163,6 +172,7 @@ public class BehaviourRunnerTests
         var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
+        Assert.Equal(output, result.Output);
         Assert.NotNull(scenario1.Received(1).ThenAsync(context));
         Assert.NotNull(scenario2.Received(1).ThenAsync(context));
         Assert.NotNull(scenario3.DidNotReceive().ThenAsync(context));
@@ -178,6 +188,7 @@ public class BehaviourRunnerTests
         var scenario1 = Substitute.For<BehaviourScenario>();
         var scenario2 = Substitute.For<BehaviourScenario>();
         var scenario3 = Substitute.For<BehaviourScenario>();
+        var output = new object();
 
         feature1.Given(context).Returns(false);
         feature1.Scenarios.Returns([scenario1]);
@@ -190,7 +201,7 @@ public class BehaviourRunnerTests
 
         scenario1.Given(context).Returns(BehaviourPhase.On);
         scenario1.When(context).Returns(true);
-        scenario1.ThenAsync(context).Returns(context.Continue());
+        scenario1.ThenAsync(context).Returns(context.Continue(output: output));
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
@@ -203,6 +214,7 @@ public class BehaviourRunnerTests
         var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3]);
 
         Assert.NotNull(result);
+        Assert.Equal(output, result.Output);
         Assert.NotNull(scenario1.DidNotReceive().ThenAsync(context));
         Assert.NotNull(scenario2.Received(1).ThenAsync(context));
         Assert.NotNull(scenario3.Received(1).ThenAsync(context));
@@ -218,6 +230,7 @@ public class BehaviourRunnerTests
         var scenario1 = Substitute.For<BehaviourScenario>();
         var scenario2 = Substitute.For<BehaviourScenario>();
         var scenario3 = Substitute.For<BehaviourScenario>();
+        var output = new object();
 
         feature1.FeatureName.Returns("Feature1");
         feature1.Given(context).Returns(true);
@@ -237,7 +250,7 @@ public class BehaviourRunnerTests
 
         scenario2.Given(context).Returns(BehaviourPhase.On);
         scenario2.When(context).Returns(true);
-        scenario2.ThenAsync(context).Returns(context.Continue());
+        scenario2.ThenAsync(context).Returns(context.Continue(output: output));
 
         scenario3.Given(context).Returns(BehaviourPhase.On);
         scenario3.When(context).Returns(true);
@@ -246,6 +259,7 @@ public class BehaviourRunnerTests
         var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3], featureName => featureName != "Feature1");
 
         Assert.NotNull(result);
+        Assert.Equal(output, result.Output);
         Assert.NotNull(scenario1.DidNotReceive().ThenAsync(context));
         Assert.NotNull(scenario2.Received(1).ThenAsync(context));
         Assert.NotNull(scenario3.Received(1).ThenAsync(context));

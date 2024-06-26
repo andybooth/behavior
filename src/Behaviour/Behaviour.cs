@@ -11,27 +11,24 @@ public class BehaviourContext(ILogger logger)
     public string? Operation { get; init; }
     public string? Resource { get; init; }
     public object? Input { get; init; }
-    public Dictionary<string, object> State { get; } = [];
+    public Dictionary<string, object?> State { get; } = [];
     public List<object> Events { get; } = [];
     public BehaviourResult? Result { get; set; }
 
-    public Task<BehaviourResult> Continue(int code = 0, object? output = null)
+    public Task<BehaviourResult> Continue(int? code = null, string? message = null, object? output = null)
     {
-        Result = new BehaviourResult { Continue = true, Code = code, Output = output };
+        Result = BehaviourResult.Build(Result, true, code, message, output);
         return Task.FromResult(Result);
     }
 
-    public Task<BehaviourResult> NotContinue(int code = -1, object? output = null)
+    public Task<BehaviourResult> NotContinue(int? code = null, string? message = null, object? output = null)
     {
-        Result = new BehaviourResult { Continue = false, Code = code, Output = output };
+        Result = BehaviourResult.Build(Result, false, code, message, output);
         return Task.FromResult(Result);
     }
 
-    public void SetState<TState>(TState item)
-    {
-        ArgumentNullException.ThrowIfNull(item);
-        State.Add(nameof(TState), item);
-    }
+    public void SetState<TState>(TState? item)
+        => State.Add(nameof(TState), item);
 
     public TState GetState<TState>() where TState : class
         => State.GetValueOrDefault(nameof(TState)) as TState ?? throw new KeyNotFoundException(nameof(TState));
@@ -43,6 +40,24 @@ public class BehaviourResult
     public int Code { get; init; } = 0;
     public List<string> Messages { get; init; } = [];
     public object? Output { get; init; }
+
+    public static BehaviourResult Build(BehaviourResult? existing, bool continueRunning, int? code = null, string? message = null, object? output = null)
+    {
+        var result = new BehaviourResult
+        {
+            Continue = continueRunning,
+            Code = code ?? existing?.Code ?? 0,
+            Messages = existing?.Messages ?? [],
+            Output = output ?? existing?.Output
+        };
+
+        if (message is not null)
+        {
+            result.Messages.Add(message);
+        }
+
+        return result;
+    }
 }
 
 public enum BehaviourPhase
@@ -181,7 +196,7 @@ public partial class BehaviourRunner
             {
                 LogScenarioError(context.Logger, ex);
 
-                await context.NotContinue();
+                context.Result = await context.NotContinue(-1);
             }
 
             if (context.Result?.Continue is false)
