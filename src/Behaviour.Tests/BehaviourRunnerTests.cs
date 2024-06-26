@@ -19,7 +19,7 @@ public class BehaviourRunnerTests
         scenario.When(context).Returns(true);
         scenario.ThenAsync(context).Returns(_ => context.Complete(output: output));
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
+        var result = await new BehaviourRunner().ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
@@ -66,7 +66,7 @@ public class BehaviourRunnerTests
         scenario6.When(context).Returns(true);
         scenario6.ThenAsync(context).Returns(_ => context.Complete());
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
+        var result = await new BehaviourRunner().ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
@@ -103,7 +103,7 @@ public class BehaviourRunnerTests
         scenario3.When(context).Returns(true);
         scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
+        var result = await new BehaviourRunner().ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
@@ -137,7 +137,7 @@ public class BehaviourRunnerTests
         scenario3.When(context).Returns(true);
         scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
+        var result = await new BehaviourRunner().ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
@@ -171,7 +171,7 @@ public class BehaviourRunnerTests
         scenario3.When(context).Returns(true);
         scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
+        var result = await new BehaviourRunner().ExecuteAsync(context, [feature]);
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
@@ -213,7 +213,7 @@ public class BehaviourRunnerTests
         scenario3.When(context).Returns(true);
         scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3]);
+        var result = await new BehaviourRunner().ExecuteAsync(context, [feature1, feature2, feature3]);
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
@@ -258,13 +258,18 @@ public class BehaviourRunnerTests
         scenario3.When(context).Returns(true);
         scenario3.ThenAsync(context).Returns(_ => context.Complete());
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature1, feature2, feature3], featureName => featureName != nameof(feature1));
+        var result = await new MockBehaviourRunner().ExecuteAsync(context, [feature1, feature2, feature3]);
 
         Assert.NotNull(result);
         Assert.Equal(output, result.Output);
         Assert.NotNull(scenario1.DidNotReceive().ThenAsync(context));
         Assert.NotNull(scenario2.Received(1).ThenAsync(context));
         Assert.NotNull(scenario3.Received(1).ThenAsync(context));
+    }
+
+    public class MockBehaviourRunner : BehaviourRunner
+    {
+        public override bool IsFeatureEnabled(string featureName) => featureName != "feature1";
     }
 
     [Fact]
@@ -290,7 +295,7 @@ public class BehaviourRunnerTests
         scenario2.When(context).Returns(true);
         scenario2.ThenAsync(context).Returns(_ => context.Complete(output: output));
 
-        var result = await BehaviourRunner.ExecuteAsync(context, [feature]);
+        var result = await new BehaviourRunner().ExecuteAsync(context, [feature]);
 
         Assert.True(logger.HasLogScenarioBegin(nameof(scenario1)));
         Assert.True(logger.HasLogScenarioEnd(nameof(scenario1)));

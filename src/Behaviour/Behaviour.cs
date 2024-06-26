@@ -12,7 +12,6 @@ public class BehaviourContext(ILogger logger)
     public string? Resource { get; init; }
     public object? Input { get; init; }
     public Dictionary<string, object?> State { get; } = [];
-    public List<object> Events { get; } = [];
     public BehaviourResult? Result { get; set; }
 
     public Task<BehaviourResult> Next(int? code = null, string? message = null, object? output = null)
@@ -27,11 +26,17 @@ public class BehaviourContext(ILogger logger)
         return Task.FromResult(Result);
     }
 
-    public void SetState<TState>(TState? item)
-        => State.Add(nameof(TState), item);
+    public void Set<TItem>(TItem? item)
+        => State.Add(nameof(TItem), item);
 
-    public TState GetState<TState>() where TState : class
-        => State.GetValueOrDefault(nameof(TState)) as TState ?? throw new KeyNotFoundException(nameof(TState));
+    public TItem Get<TItem>() where TItem : class
+        => State.GetValueOrDefault(nameof(TItem)) as TItem ?? throw new KeyNotFoundException(nameof(TItem));
+
+    public void Append<TItem>(TItem? item)
+        => State.Add(Guid.NewGuid().ToString(), item);
+
+    public IEnumerable<TItem> GetAll<TItem>()
+        => State.Values.OfType<TItem>();
 }
 
 public class BehaviourResult
@@ -114,7 +119,9 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
 
 public partial class BehaviourRunner
 {
-    public static async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features, Func<string, bool>? featureFlags = null, Func<List<object>, Task>? sender = null)
+    public virtual bool IsFeatureEnabled(string featureName) => true;
+
+    public async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features)
     {
         var loggerState = new Dictionary<string, object?>
         {
@@ -126,7 +133,7 @@ public partial class BehaviourRunner
         using var scope = context.Logger.BeginScope(loggerState);
 
         var scenarios = features
-            .Where(f => featureFlags is null || featureFlags(f.FeatureName) is true)
+            .Where(f => IsFeatureEnabled(f.FeatureName))
             .Where(f => f.Given(context))
             .SelectMany(f => f.Scenarios)
             .Select(s => (Phase: s.Given(context), Scenario: s))
@@ -142,11 +149,6 @@ public partial class BehaviourRunner
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
         await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.After);
-
-        if (sender is not null && context.Events.Count > 0)
-        {
-            await sender(context.Events);
-        }
 
         return await context.Next();
     }

@@ -13,7 +13,7 @@ group.MapPost("/", async (Application application, IPrincipal principal, ILogger
         Principal = principal
     };
 
-    await BehaviourRunner.ExecuteAsync(context, [new SubmitApplicationFeature()]);
+    await new BehaviourRunner().ExecuteAsync(context, [new SubmitApplicationFeature()]);
 });
 
 app.Run();
@@ -22,7 +22,7 @@ public record Application(string FirstName, string LastName, int Age);
 
 public record Product(bool ExistingUsers, int MinimumAge);
 
-public record CreatedApplication(string applicationId);
+public record CreatedApplicationEvent(string applicationId);
 
 public class SubmitApplicationFeature : BehaviourFeature<Application>
 {
@@ -42,7 +42,7 @@ public class ProductLookup : BehaviourScenario
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
     {
-        context.SetState(new Product(ExistingUsers: true, MinimumAge: 18));
+        context.Set(new Product(ExistingUsers: true, MinimumAge: 18));
         return context.Next();
     }
 }
@@ -52,7 +52,7 @@ public class AuthorizationPolicy : BehaviourScenario
     public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Before;
 
     public override bool When(BehaviourContext context)
-        => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUsers;
+        => context.Principal?.Identity?.IsAuthenticated == context.Get<Product>().ExistingUsers;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
         => context.Complete(code: 401);
@@ -63,10 +63,10 @@ public class AgeRestriction : BehaviourScenario<Application>
     public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Before;
 
     public override bool When(BehaviourContext context, Application input)
-        => input.Age < context.GetState<Product>().MinimumAge;
+        => input.Age < context.Get<Product>().MinimumAge;
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
-        => context.Complete(code: 400, message: $"Minimum age {context.GetState<Product>().MinimumAge}");
+        => context.Complete(code: 400, message: $"Minimum age {context.Get<Product>().MinimumAge}");
 }
 
 public class ApplicationValidation : BehaviourScenario<Application>
@@ -88,7 +88,7 @@ public class ApplicationStore : BehaviourScenario<Application>
     {
         var applicationId = Guid.NewGuid().ToString();
         Store[applicationId] = input;
-        context.Events.Add(new CreatedApplication(applicationId));
+        context.Append(new CreatedApplicationEvent(applicationId));
         return context.Next(code: 200, output: applicationId);
     }
 }
