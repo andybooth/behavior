@@ -6,14 +6,19 @@ var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
 var group = app.MapGroup("/application");
 
-group.MapPost("/", async (Application application, IPrincipal principal, ILogger logger) =>
+group.MapPost("/SubmitApplication/{applicationId}", async (string applicationId, Application application, IPrincipal principal, ILogger logger) =>
 {
     var context = new BehaviourContext(logger)
     {
-        Principal = principal
+        Principal = principal,
+        Operation = "SubmitApplication",
+        Resource = applicationId
     };
 
-    await new BehaviourRunner().ExecuteAsync(context, [new SubmitApplicationFeature()]);
+    var result = await new BehaviourRunner()
+        .ExecuteAsync(context, [new SubmitApplicationFeature()]);
+
+    return Results.Ok(result.Output);
 });
 
 app.Run();
@@ -86,7 +91,7 @@ public class ApplicationStore : BehaviourScenario<Application>
 
     public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
     {
-        var applicationId = Guid.NewGuid().ToString();
+        var applicationId = context.Resource!;
         Store[applicationId] = input;
         context.Append(new CreatedApplicationEvent(applicationId));
         return context.Next(code: 200, output: applicationId);
