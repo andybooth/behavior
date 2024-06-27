@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Behaviour.Tests;
+﻿namespace Behaviour.Tests;
 
 public class BehaviourRunnerTests
 {
@@ -297,38 +295,21 @@ public class BehaviourRunnerTests
 
         var result = await new BehaviourRunner().ExecuteAsync(context, [feature]);
 
-        Assert.True(logger.HasLogScenarioBegin(nameof(scenario1)));
-        Assert.True(logger.HasLogScenarioEnd(nameof(scenario1)));
-        Assert.True(logger.HasLogScenarioBegin(nameof(scenario2)));
-        Assert.True(logger.HasLogScenarioEnd(nameof(scenario2)));
+        logger.Received(1).Log(LogLevel.Information, $"Scenario '{nameof(scenario1)}' Begin");
+        logger.Received(1).Log(LogLevel.Information, $"Scenario '{nameof(scenario1)}' End");
+        logger.Received(1).Log(LogLevel.Information, $"Scenario '{nameof(scenario2)}' Begin");
+        logger.Received(1).Log(LogLevel.Information, $"Scenario '{nameof(scenario2)}' End");
     }
 }
 
 public abstract class MockLogger : ILogger
 {
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
-    {
-        Log(logLevel, formatter(state, exception));
-    }
+        => Log(logLevel, formatter(state, exception));
 
     public abstract void Log(LogLevel logLevel, string message);
 
     public bool IsEnabled(LogLevel logLevel) => true;
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
-    {
-        return null;
-    }
-
-    public bool HasLogScenarioBegin(string scenarioName)
-    {
-        this.Received(1).Log(LogLevel.Information, $"Scenario '{scenarioName}' Begin");
-        return true;
-    }
-
-    public bool HasLogScenarioEnd(string scenarioName)
-    {
-        this.Received(1).Log(LogLevel.Information, $"Scenario '{scenarioName}' End");
-        return true;
-    }
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 }

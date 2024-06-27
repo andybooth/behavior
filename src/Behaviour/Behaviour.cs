@@ -1,7 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Security.Principal;
-
-namespace Behaviour;
+﻿namespace Behaviour;
 
 public class BehaviourContext(ILogger logger)
 {
@@ -25,18 +22,6 @@ public class BehaviourContext(ILogger logger)
         Result = BehaviourResult.Build(Result, true, code, message, output);
         return Task.FromResult(Result);
     }
-
-    public void Set<TItem>(TItem? item)
-        => State.Add(nameof(TItem), item);
-
-    public TItem Get<TItem>() where TItem : class
-        => State.GetValueOrDefault(nameof(TItem)) as TItem ?? throw new KeyNotFoundException(nameof(TItem));
-
-    public void Append<TItem>(TItem? item)
-        => State.Add(Guid.NewGuid().ToString(), item);
-
-    public IEnumerable<TItem> GetAll<TItem>()
-        => State.Values.OfType<TItem>();
 }
 
 public class BehaviourResult
@@ -46,14 +31,14 @@ public class BehaviourResult
     public List<string> Messages { get; init; } = [];
     public object? Output { get; init; }
 
-    public static BehaviourResult Build(BehaviourResult? existing, bool isComplete, int? code = null, string? message = null, object? output = null)
+    public static BehaviourResult Build(BehaviourResult? previousResult, bool isComplete, int? code = null, string? message = null, object? output = null)
     {
         var result = new BehaviourResult
         {
             IsComplete = isComplete,
-            Code = code ?? existing?.Code,
-            Messages = existing?.Messages ?? [],
-            Output = output ?? existing?.Output
+            Code = code ?? previousResult?.Code,
+            Messages = previousResult?.Messages ?? [],
+            Output = output ?? previousResult?.Output
         };
 
         if (message is not null)

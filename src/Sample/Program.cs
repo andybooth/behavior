@@ -105,3 +105,18 @@ public class AuditLog : BehaviourScenario
         return base.ThenAsync(context);
     }
 }
+
+public static class BehaviourContextExtensions
+{
+    public static void Set<TItem>(this BehaviourContext context, TItem? item)
+        => context.State.Add(nameof(TItem), item);
+
+    public static TItem Get<TItem>(this BehaviourContext context) where TItem : class
+        => context.State.GetValueOrDefault(nameof(TItem)) as TItem ?? throw new KeyNotFoundException(nameof(TItem));
+
+    public static void Append<TItem>(this BehaviourContext context, TItem? item)
+        => context.State.Add(Guid.NewGuid().ToString(), item);
+
+    public static IEnumerable<TItem> GetAll<TItem>(this BehaviourContext context)
+        => context.State.Values.OfType<TItem>();
+}
