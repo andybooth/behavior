@@ -10,18 +10,6 @@ public class BehaviourContext(ILogger logger)
     public object? Input { get; init; }
     public Dictionary<string, object?> State { get; } = [];
     public BehaviourResult? Result { get; set; }
-
-    public Task<BehaviourResult> Next(int? code = null, string? message = null, object? output = null)
-    {
-        Result = BehaviourResult.Build(Result, false, code, message, output);
-        return Task.FromResult(Result);
-    }
-
-    public Task<BehaviourResult> Complete(int? code = null, string? message = null, object? output = null)
-    {
-        Result = BehaviourResult.Build(Result, true, code, message, output);
-        return Task.FromResult(Result);
-    }
 }
 
 public class BehaviourResult
@@ -30,24 +18,6 @@ public class BehaviourResult
     public int? Code { get; init; }
     public List<string> Messages { get; init; } = [];
     public object? Output { get; init; }
-
-    public static BehaviourResult Build(BehaviourResult? previousResult, bool isComplete, int? code = null, string? message = null, object? output = null)
-    {
-        var result = new BehaviourResult
-        {
-            IsComplete = isComplete,
-            Code = code ?? previousResult?.Code,
-            Messages = previousResult?.Messages ?? [],
-            Output = output ?? previousResult?.Output
-        };
-
-        if (message is not null)
-        {
-            result.Messages.Add(message);
-        }
-
-        return result;
-    }
 }
 
 public enum BehaviourPhase
