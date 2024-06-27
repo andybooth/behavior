@@ -4,19 +4,19 @@ using System.Security.Principal;
 
 var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
-var group = app.MapGroup("/application");
+var api = app.MapGroup("/application");
 
-group.MapPost("/SubmitApplication/{applicationId}", async (string applicationId, Application application, IPrincipal principal, ILogger logger) =>
+api.MapPost("/{applicationId}", async (string applicationId, Application application, IPrincipal principal, ILogger logger) =>
 {
     var context = new BehaviourContext(logger)
     {
         Principal = principal,
-        Operation = "SubmitApplication",
+        Operation = nameof(SubmitApplication),
         Resource = applicationId
     };
 
     var result = await new BehaviourRunner()
-        .ExecuteAsync(context, [new SubmitApplicationFeature()]);
+        .ExecuteAsync(context, [new SubmitApplication()]);
 
     return Results.Ok(result.Output);
 });
@@ -29,7 +29,7 @@ public record Product(bool ExistingUsers, int MinimumAge);
 
 public record CreatedApplicationEvent(string applicationId);
 
-public class SubmitApplicationFeature : BehaviourFeature<Application>
+public class SubmitApplication : BehaviourFeature<Application>
 {
     public override List<BehaviourScenario> Scenarios => [
         new ProductLookup(),
