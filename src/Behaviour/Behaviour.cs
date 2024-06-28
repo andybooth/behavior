@@ -74,7 +74,7 @@ public abstract class BehaviourScenario<TInput> : BehaviourScenario
 
 public partial class BehaviourRunner
 {
-    public virtual bool HasFeatureFlag(string featureName) => true;
+    public virtual Task<bool> IsEnabledAsync(string featureName) => Task.FromResult(true);
 
     public async Task<BehaviourResult> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features)
     {
@@ -87,8 +87,17 @@ public partial class BehaviourRunner
 
         using var scope = context.Logger.BeginScope(loggerState);
 
-        var scenarios = features
-            .Where(f => HasFeatureFlag(f.FeatureName))
+        var enabledFeatures = new List<BehaviourFeature>();
+
+        foreach (var feature in features)
+        {
+            if (await IsEnabledAsync(feature.FeatureName))
+            {
+                enabledFeatures.Add(feature);
+            }
+        }
+
+        var scenarios = enabledFeatures
             .Where(f => f.Given(context))
             .SelectMany(f => f.Scenarios)
             .Select(s => (Phase: s.Given(context), Scenario: s))

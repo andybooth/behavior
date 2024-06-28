@@ -1,4 +1,5 @@
 using Behaviour;
+using Microsoft.FeatureManagement;
 using System.Collections.Concurrent;
 using System.Security.Principal;
 
@@ -6,7 +7,7 @@ var builder = WebApplication.CreateSlimBuilder(args);
 var app = builder.Build();
 var api = app.MapGroup("/application");
 
-api.MapPost("/{applicationId}", async (string applicationId, Application application, IPrincipal principal, ILogger logger) =>
+api.MapPost("/{applicationId}", async (string applicationId, Application application, IPrincipal principal, ILogger logger, IFeatureManager featureManager) =>
 {
     var context = new BehaviourContext(logger)
     {
@@ -15,7 +16,7 @@ api.MapPost("/{applicationId}", async (string applicationId, Application applica
         Resource = applicationId
     };
 
-    var result = await new BehaviourRunner()
+    var result = await new FeatureManagementBehaviourRunner(featureManager)
         .ExecuteAsync(context, [new SubmitApplication()]);
 
     return Results.Ok(result.Output);
@@ -109,6 +110,11 @@ public class AuditLog : BehaviourScenario
         Store[context.CorrelationId] = $"Application {context.Result!.Output} created by {context.Principal!.Identity!.Name}";
         return base.ThenAsync(context);
     }
+}
+
+public class FeatureManagementBehaviourRunner(IFeatureManager featureManager) : BehaviourRunner
+{
+    public override Task<bool> IsEnabledAsync(string featureName) => featureManager.IsEnabledAsync(featureName);
 }
 
 public static class BehaviourContextExtensions

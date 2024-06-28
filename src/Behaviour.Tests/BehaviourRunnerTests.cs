@@ -267,7 +267,11 @@ public class BehaviourRunnerTests
 
     public class MockBehaviourRunner : BehaviourRunner
     {
-        public override bool HasFeatureFlag(string featureName) => featureName != "feature1";
+        public override Task<bool> IsEnabledAsync(string featureName)
+        {
+            var enabled = featureName != "feature1";
+            return Task.FromResult(enabled);
+        }
     }
 
     [Fact]
