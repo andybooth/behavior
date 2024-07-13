@@ -57,7 +57,7 @@ public abstract class BehaviorFeature<TInput> : BehaviorFeature
 public abstract class BehaviorScenario
 {
     public virtual string Name => GetType().Name;
-    public virtual BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.OnRun;
+    public virtual BehaviorPhase? Given(BehaviorContext context) => null;
     public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context) => Task.FromResult<BehaviorPhase?>(BehaviorPhase.OnRun);
     public virtual bool When(BehaviorContext context) => true;
     public virtual Task<bool> WhenAsync(BehaviorContext context) => Task.FromResult(true);
@@ -67,9 +67,16 @@ public abstract class BehaviorScenario
 
 public abstract class BehaviorScenario<TInput> : BehaviorScenario
 {
+    public override BehaviorPhase? Given(BehaviorContext context) => context.Input is TInput input
+        ? Given(context, input)
+        : BehaviorPhase.None;
+
+    public virtual BehaviorPhase? Given(BehaviorContext context, TInput input)
+        => null;
+
     public override async Task<BehaviorPhase?> GivenAsync(BehaviorContext context) => context.Input is TInput input
         ? await GivenAsync(context, input)
-        : null;
+        : BehaviorPhase.None;
 
     public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context, TInput input)
         => Task.FromResult<BehaviorPhase?>(BehaviorPhase.OnRun);
