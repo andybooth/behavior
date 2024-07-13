@@ -1,4 +1,7 @@
-﻿namespace Behavior;
+﻿using Microsoft.Extensions.Logging;
+using System.Security.Principal;
+
+namespace Behavior;
 
 public class BehaviorContext(ILogger logger)
 {
