@@ -51,7 +51,7 @@ public class ProductLookup : BehaviorScenario
 
     public override BehaviorResult? Then(BehaviorContext context)
     {
-        context.Set(new Product(ExistingUsers: true, MinimumAge: 18));
+        context.SetState(new Product(ExistingUsers: true, MinimumAge: 18));
         return default;
     }
 }
@@ -61,7 +61,7 @@ public class AuthorizationPolicy : BehaviorScenario
     public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
 
     public override bool When(BehaviorContext context)
-        => context.Principal?.Identity?.IsAuthenticated == context.Get<Product>().ExistingUsers;
+        => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUsers;
 
     public override BehaviorResult? Then(BehaviorContext context)
         => new() { IsComplete = true, Code = 401 };
@@ -72,10 +72,10 @@ public class AgeRestriction : BehaviorScenario<Application>
     public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
 
     public override bool When(BehaviorContext context, Application input)
-        => input.Age < context.Get<Product>().MinimumAge;
+        => input.Age < context.GetState<Product>().MinimumAge;
 
     public override BehaviorResult? Then(BehaviorContext context, Application input)
-        => new() { IsComplete = true, Code = 400, Messages = [$"Minimum age {context.Get<Product>().MinimumAge}"] };
+        => new() { IsComplete = true, Code = 400, Messages = [$"Minimum age {context.GetState<Product>().MinimumAge}"] };
 }
 
 public class ApplicationValidation : BehaviorScenario<Application>
@@ -97,7 +97,6 @@ public class ApplicationStore : BehaviorScenario<Application>
     {
         var applicationId = context.Resource!;
         Store[applicationId] = input;
-        context.Append(new CreatedApplicationEvent(applicationId));
         return new() { Output = applicationId };
     }
 }
@@ -117,15 +116,9 @@ public class AuditLog : BehaviorScenario
 
 public static class BehaviorContextExtensions
 {
-    public static void Set<TItem>(this BehaviorContext context, TItem? item)
+    public static void SetState<TItem>(this BehaviorContext context, TItem? item)
         => context.State.Add(nameof(TItem), item);
 
-    public static TItem Get<TItem>(this BehaviorContext context) where TItem : class
+    public static TItem GetState<TItem>(this BehaviorContext context) where TItem : class
         => context.State.GetValueOrDefault(nameof(TItem)) as TItem ?? throw new KeyNotFoundException(nameof(TItem));
-
-    public static void Append<TItem>(this BehaviorContext context, TItem? item)
-        => context.State.Add(Guid.NewGuid().ToString(), item);
-
-    public static IEnumerable<TItem> GetAll<TItem>(this BehaviorContext context)
-        => context.State.Values.OfType<TItem>();
 }
