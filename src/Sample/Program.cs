@@ -48,7 +48,7 @@ public class SubmitApplication(IFeatureManager featureManager) : BehaviorFeature
 
 public class ProductLookup : BehaviorScenario
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.BeforePrepare;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.OnPrepare;
 
     public override BehaviorResult? Then(BehaviorContext context)
     {
@@ -57,15 +57,12 @@ public class ProductLookup : BehaviorScenario
     }
 }
 
-public class ExistingUserRequired : BehaviorScenario
+public class Authorizer : BehaviorScenario
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.OnPrepare;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.AfterPrepare;
 
-    public override bool When(BehaviorContext context)
-        => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUser;
-
-    public override BehaviorResult? Then(BehaviorContext context)
-        => new() { IsComplete = true, Code = 401 };
+    public override BehaviorResult Then(BehaviorContext context)
+        => new() { IsComplete = true, Code = 401, Messages = [$"Authorizer error {Name}"] };
 }
 
 public class Validator<T> : BehaviorScenario<T>
@@ -74,6 +71,12 @@ public class Validator<T> : BehaviorScenario<T>
 
     public override BehaviorResult Then(BehaviorContext context, T input)
         => new() { IsComplete = true, Code = 400, Messages = [$"Validator error {Name}"] };
+}
+
+public class ExistingUserRequired : Authorizer
+{
+    public override bool When(BehaviorContext context)
+        => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUser;
 }
 
 public class FirstNameRequired : Validator<Application>
