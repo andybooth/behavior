@@ -38,7 +38,8 @@ public class SubmitApplication(IFeatureManager featureManager) : BehaviorFeature
     public override List<BehaviorScenario> Scenarios => [
         new ProductLookup(),
         new AuthorizationPolicy(),
-        new ApplicationValidation(),
+        new FirstNameRequired(),
+        new LastNameRequired(),
         new AgeRestriction(),
         new ApplicationStore(),
         new AuditLog()
@@ -78,15 +79,24 @@ public class AgeRestriction : BehaviorScenario<Application>
         => new() { IsComplete = true, Code = 400, Messages = [$"Minimum age {context.GetState<Product>().MinimumAge}"] };
 }
 
-public class ApplicationValidation : BehaviorScenario<Application>
+public class Validator<T> : BehaviorScenario<T>
 {
     public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Validate;
 
-    public override bool When(BehaviorContext context, Application input)
-        => input.FirstName is null || input.LastName is null;
+    public override BehaviorResult Then(BehaviorContext context, T input)
+        => new() { IsComplete = true, Code = 400, Messages = [$"Validation error {this.GetType().Name}"] };
+}
 
-    public override BehaviorResult Then(BehaviorContext context, Application input)
-        => new() { IsComplete = true, Code = 400, Messages = ["First name and last name required"] };
+public class FirstNameRequired : Validator<Application>
+{
+    public override bool When(BehaviorContext context, Application input)
+        => input.FirstName is null;
+}
+
+public class LastNameRequired : Validator<Application>
+{
+    public override bool When(BehaviorContext context, Application input)
+        => input.LastName is null;
 }
 
 public class ApplicationStore : BehaviorScenario<Application>
