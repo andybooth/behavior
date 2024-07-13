@@ -68,23 +68,12 @@ public class AuthorizationPolicy : BehaviorScenario
         => new() { IsComplete = true, Code = 401 };
 }
 
-public class AgeRestriction : BehaviorScenario<Application>
-{
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Validate;
-
-    public override bool When(BehaviorContext context, Application input)
-        => input.Age < context.GetState<Product>().MinimumAge;
-
-    public override BehaviorResult? Then(BehaviorContext context, Application input)
-        => new() { IsComplete = true, Code = 400, Messages = [$"Minimum age {context.GetState<Product>().MinimumAge}"] };
-}
-
 public class Validator<T> : BehaviorScenario<T>
 {
     public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Validate;
 
     public override BehaviorResult Then(BehaviorContext context, T input)
-        => new() { IsComplete = true, Code = 400, Messages = [$"Validation error {this.GetType().Name}"] };
+        => new() { IsComplete = true, Code = 400, Messages = [$"Validator error {Name}"] };
 }
 
 public class FirstNameRequired : Validator<Application>
@@ -97,6 +86,12 @@ public class LastNameRequired : Validator<Application>
 {
     public override bool When(BehaviorContext context, Application input)
         => input.LastName is null;
+}
+
+public class AgeRestriction : Validator<Application>
+{
+    public override bool When(BehaviorContext context, Application input)
+        => input.Age < context.GetState<Product>().MinimumAge;
 }
 
 public class ApplicationStore : BehaviorScenario<Application>
