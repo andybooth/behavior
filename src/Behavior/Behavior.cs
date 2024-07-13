@@ -21,6 +21,7 @@ public class BehaviorResult
     public int? Code { get; init; }
     public List<string> Messages { get; init; } = [];
     public object? Output { get; init; }
+    public Exception? Exception { get; init; }
 }
 
 public enum BehaviorPhase
@@ -148,7 +149,7 @@ public partial class BehaviorRunner
         await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.OnRun);
         await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.AfterRun);
 
-        return default;
+        return context.Result;
     }
 
     private static async Task ExecuteScenariosAsync(BehaviorContext context, List<(BehaviorPhase?, BehaviorScenario)> scenariosPhases, BehaviorPhase phase)
@@ -183,7 +184,12 @@ public partial class BehaviorRunner
             {
                 LogScenarioBegin(context.Logger, scenario.Name);
 
-                context.Result = scenario.Then(context) ?? await scenario.ThenAsync(context);
+                var result = scenario.Then(context) ?? await scenario.ThenAsync(context);
+
+                if (result is not null)
+                {
+                    context.Result = result;
+                }
 
                 LogScenarioEnd(context.Logger, scenario.Name);
             }
@@ -191,7 +197,7 @@ public partial class BehaviorRunner
             {
                 LogScenarioError(context.Logger, ex, scenario.Name);
 
-                context.Result = new() { IsComplete = true };
+                context.Result = new() { IsComplete = true, Exception = ex };
             }
 
             if (context.Result?.IsComplete is true)

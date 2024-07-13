@@ -8,6 +8,7 @@ public class BehaviorRunnerTests
         var context = new BehaviorContext(NullLogger.Instance);
         var feature = Substitute.For<BehaviorFeature>();
         var scenario = Substitute.For<BehaviorScenario>();
+        var expected = new BehaviorResult();
 
         feature.Given(context).Returns(true);
         feature.GivenAsync(context).Returns(true);
@@ -15,8 +16,11 @@ public class BehaviorRunnerTests
 
         scenario.Given(context).Returns(BehaviorPhase.OnRun);
         scenario.When(context).Returns(true);
+        scenario.Then(context).Returns(expected);
 
-        var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);
+        var actual = await new BehaviorRunner().ExecuteAsync(context, [feature]);
+
+        Assert.Equal(expected, actual);
 
         scenario.Received(1).Then(context);
     }
@@ -32,6 +36,7 @@ public class BehaviorRunnerTests
         var scenario4 = Substitute.For<BehaviorScenario>();
         var scenario5 = Substitute.For<BehaviorScenario>();
         var scenario6 = Substitute.For<BehaviorScenario>();
+        var expected = new BehaviorResult();
 
         feature.Given(context).Returns(true);
         feature.GivenAsync(context).Returns(true);
@@ -48,6 +53,7 @@ public class BehaviorRunnerTests
 
         scenario4.Given(context).Returns(BehaviorPhase.OnRun);
         scenario4.When(context).Returns(true);
+        scenario4.Then(context).Returns(expected);
 
         scenario5.Given(context).Returns(BehaviorPhase.OnRun);
         scenario5.When(context).Returns(false);
@@ -55,7 +61,9 @@ public class BehaviorRunnerTests
         scenario6.Given(context).Returns(BehaviorPhase.AfterRun);
         scenario6.When(context).Returns(true);
 
-        var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);
+        var actual = await new BehaviorRunner().ExecuteAsync(context, [feature]);
+
+        Assert.Equal(expected, actual);
 
         scenario1.DidNotReceive().Then(context);
         scenario2.Received(1).Then(context);
