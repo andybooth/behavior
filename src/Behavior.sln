@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Behaviour", "Behaviour\Behaviour.csproj", "{29BF27CD-EA6D-4EC6-85B9-2A2EF4372DC1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Behavior", "Behavior\Behavior.csproj", "{29BF27CD-EA6D-4EC6-85B9-2A2EF4372DC1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample", "Sample\Sample.csproj", "{24DB51B8-2BE0-4F6E-A75C-472915BAF842}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Behaviour.Tests", "Behaviour.Tests\Behaviour.Tests.csproj", "{0AC955DD-3C95-4EF1-B392-F9D45BB2AC90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Behavior.Tests", "Behavior.Tests\Behavior.Tests.csproj", "{0AC955DD-3C95-4EF1-B392-F9D45BB2AC90}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,4 +1,4 @@
-using Behaviour;
+using Behavior;
 using Microsoft.FeatureManagement;
 using System.Collections.Concurrent;
 using System.Security.Principal;
@@ -9,14 +9,14 @@ var api = app.MapGroup("/application");
 
 api.MapPost("/{applicationId}", async (string applicationId, Application application, IPrincipal principal, ILogger logger, IFeatureManager featureManager) =>
 {
-    var context = new BehaviourContext(logger)
+    var context = new BehaviorContext(logger)
     {
         Principal = principal,
         Operation = nameof(SubmitApplication),
         Resource = applicationId
     };
 
-    var result = await new BehaviourRunner()
+    var result = await new BehaviorRunner()
         .ExecuteAsync(context, [new SubmitApplication(featureManager)]);
 
     return Results.Ok(result?.Output);
@@ -30,12 +30,12 @@ public record Product(bool ExistingUsers, int MinimumAge);
 
 public record CreatedApplicationEvent(string applicationId);
 
-public class SubmitApplication(IFeatureManager featureManager) : BehaviourFeature<Application>
+public class SubmitApplication(IFeatureManager featureManager) : BehaviorFeature<Application>
 {
-    public override Task<bool> GivenAsync(BehaviourContext context)
+    public override Task<bool> GivenAsync(BehaviorContext context)
         => featureManager.IsEnabledAsync(nameof(SubmitApplication));
 
-    public override List<BehaviourScenario> Scenarios => [
+    public override List<BehaviorScenario> Scenarios => [
         new ProductLookup(),
         new AuthorizationPolicy(),
         new ApplicationValidation(),
@@ -45,55 +45,55 @@ public class SubmitApplication(IFeatureManager featureManager) : BehaviourFeatur
     ];
 }
 
-public class ProductLookup : BehaviourScenario
+public class ProductLookup : BehaviorScenario
 {
-    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Initialize;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Initialize;
 
-    public override BehaviourResult? Then(BehaviourContext context)
+    public override BehaviorResult? Then(BehaviorContext context)
     {
         context.Set(new Product(ExistingUsers: true, MinimumAge: 18));
         return default;
     }
 }
 
-public class AuthorizationPolicy : BehaviourScenario
+public class AuthorizationPolicy : BehaviorScenario
 {
-    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Before;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
 
-    public override bool When(BehaviourContext context)
+    public override bool When(BehaviorContext context)
         => context.Principal?.Identity?.IsAuthenticated == context.Get<Product>().ExistingUsers;
 
-    public override BehaviourResult? Then(BehaviourContext context)
+    public override BehaviorResult? Then(BehaviorContext context)
         => new() { IsComplete = true, Code = 401 };
 }
 
-public class AgeRestriction : BehaviourScenario<Application>
+public class AgeRestriction : BehaviorScenario<Application>
 {
-    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Before;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
 
-    public override bool When(BehaviourContext context, Application input)
+    public override bool When(BehaviorContext context, Application input)
         => input.Age < context.Get<Product>().MinimumAge;
 
-    public override BehaviourResult? Then(BehaviourContext context, Application input)
+    public override BehaviorResult? Then(BehaviorContext context, Application input)
         => new() { IsComplete = true, Code = 400, Messages = [$"Minimum age {context.Get<Product>().MinimumAge}"] };
 }
 
-public class ApplicationValidation : BehaviourScenario<Application>
+public class ApplicationValidation : BehaviorScenario<Application>
 {
-    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Before;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
 
-    public override bool When(BehaviourContext context, Application input)
+    public override bool When(BehaviorContext context, Application input)
         => input.FirstName is null || input.LastName is null;
 
-    public override BehaviourResult Then(BehaviourContext context, Application input)
+    public override BehaviorResult Then(BehaviorContext context, Application input)
         => new() { IsComplete = true, Code = 400, Messages = ["First name and last name required"] };
 }
 
-public class ApplicationStore : BehaviourScenario<Application>
+public class ApplicationStore : BehaviorScenario<Application>
 {
     private static readonly ConcurrentDictionary<string, Application> Store = [];
 
-    public override BehaviourResult? Then(BehaviourContext context, Application input)
+    public override BehaviorResult? Then(BehaviorContext context, Application input)
     {
         var applicationId = context.Resource!;
         Store[applicationId] = input;
@@ -102,30 +102,30 @@ public class ApplicationStore : BehaviourScenario<Application>
     }
 }
 
-public class AuditLog : BehaviourScenario
+public class AuditLog : BehaviorScenario
 {
     private static readonly ConcurrentDictionary<string, string> Store = [];
 
-    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.After;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.After;
 
-    public override BehaviourResult? Then(BehaviourContext context)
+    public override BehaviorResult? Then(BehaviorContext context)
     {
         Store[context.CorrelationId] = $"Application {context.Result!.Output} created by {context.Principal!.Identity!.Name}";
         return default;
     }
 }
 
-public static class BehaviourContextExtensions
+public static class BehaviorContextExtensions
 {
-    public static void Set<TItem>(this BehaviourContext context, TItem? item)
+    public static void Set<TItem>(this BehaviorContext context, TItem? item)
         => context.State.Add(nameof(TItem), item);
 
-    public static TItem Get<TItem>(this BehaviourContext context) where TItem : class
+    public static TItem Get<TItem>(this BehaviorContext context) where TItem : class
         => context.State.GetValueOrDefault(nameof(TItem)) as TItem ?? throw new KeyNotFoundException(nameof(TItem));
 
-    public static void Append<TItem>(this BehaviourContext context, TItem? item)
+    public static void Append<TItem>(this BehaviorContext context, TItem? item)
         => context.State.Add(Guid.NewGuid().ToString(), item);
 
-    public static IEnumerable<TItem> GetAll<TItem>(this BehaviourContext context)
+    public static IEnumerable<TItem> GetAll<TItem>(this BehaviorContext context)
         => context.State.Values.OfType<TItem>();
 }

@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Behaviour\Behaviour.csproj" />
+    <ProjectReference Include="..\Behavior\Behavior.csproj" />
   </ItemGroup>
 
 </Project>

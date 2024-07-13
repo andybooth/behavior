@@ -1,6 +1,6 @@
-﻿namespace Behaviour;
+﻿namespace Behavior;
 
-public class BehaviourContext(ILogger logger)
+public class BehaviorContext(ILogger logger)
 {
     public ILogger Logger { get; } = logger;
     public string CorrelationId { get; init; } = Guid.NewGuid().ToString();
@@ -9,10 +9,10 @@ public class BehaviourContext(ILogger logger)
     public string? Resource { get; init; }
     public object? Input { get; init; }
     public Dictionary<string, object?> State { get; } = [];
-    public BehaviourResult? Result { get; set; }
+    public BehaviorResult? Result { get; set; }
 }
 
-public class BehaviourResult
+public class BehaviorResult
 {
     public bool IsComplete { get; init; } = false;
     public int? Code { get; init; }
@@ -20,7 +20,7 @@ public class BehaviourResult
     public object? Output { get; init; }
 }
 
-public enum BehaviourPhase
+public enum BehaviorPhase
 {
     None,
     Initialize,
@@ -29,72 +29,72 @@ public enum BehaviourPhase
     After
 }
 
-public abstract class BehaviourFeature
+public abstract class BehaviorFeature
 {
-    public virtual bool Given(BehaviourContext context) => true;
-    public virtual Task<bool> GivenAsync(BehaviourContext context) => Task.FromResult(true);
-    public virtual List<BehaviourScenario> Scenarios { get; } = [];
+    public virtual bool Given(BehaviorContext context) => true;
+    public virtual Task<bool> GivenAsync(BehaviorContext context) => Task.FromResult(true);
+    public virtual List<BehaviorScenario> Scenarios { get; } = [];
 }
 
-public abstract class BehaviourFeature<TInput> : BehaviourFeature
+public abstract class BehaviorFeature<TInput> : BehaviorFeature
 {
-    public override bool Given(BehaviourContext context) => context.Input is TInput input
+    public override bool Given(BehaviorContext context) => context.Input is TInput input
         && Given(context, input);
 
-    public virtual bool Given(BehaviourContext context, TInput input) => true;
+    public virtual bool Given(BehaviorContext context, TInput input) => true;
 
-    public override async Task<bool> GivenAsync(BehaviourContext context) => context.Input is TInput input
+    public override async Task<bool> GivenAsync(BehaviorContext context) => context.Input is TInput input
         && await GivenAsync(context, input);
 
-    public virtual Task<bool> GivenAsync(BehaviourContext context, TInput input) => Task.FromResult(true);
+    public virtual Task<bool> GivenAsync(BehaviorContext context, TInput input) => Task.FromResult(true);
 }
 
-public abstract class BehaviourScenario
+public abstract class BehaviorScenario
 {
     public virtual string Name => GetType().Name;
-    public virtual BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.On;
-    public virtual Task<BehaviourPhase?> GivenAsync(BehaviourContext context) => Task.FromResult<BehaviourPhase?>(BehaviourPhase.On);
-    public virtual bool When(BehaviourContext context) => true;
-    public virtual Task<bool> WhenAsync(BehaviourContext context) => Task.FromResult(true);
-    public virtual BehaviourResult? Then(BehaviourContext context) => null;
-    public virtual Task<BehaviourResult?> ThenAsync(BehaviourContext context) => Task.FromResult<BehaviourResult?>(null);
+    public virtual BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.On;
+    public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context) => Task.FromResult<BehaviorPhase?>(BehaviorPhase.On);
+    public virtual bool When(BehaviorContext context) => true;
+    public virtual Task<bool> WhenAsync(BehaviorContext context) => Task.FromResult(true);
+    public virtual BehaviorResult? Then(BehaviorContext context) => null;
+    public virtual Task<BehaviorResult?> ThenAsync(BehaviorContext context) => Task.FromResult<BehaviorResult?>(null);
 }
 
-public abstract class BehaviourScenario<TInput> : BehaviourScenario
+public abstract class BehaviorScenario<TInput> : BehaviorScenario
 {
-    public override async Task<BehaviourPhase?> GivenAsync(BehaviourContext context) => context.Input is TInput input
+    public override async Task<BehaviorPhase?> GivenAsync(BehaviorContext context) => context.Input is TInput input
         ? await GivenAsync(context, input)
-        : BehaviourPhase.None;
+        : BehaviorPhase.None;
 
-    public virtual Task<BehaviourPhase?> GivenAsync(BehaviourContext context, TInput input) => Task.FromResult<BehaviourPhase?>(BehaviourPhase.On);
+    public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context, TInput input) => Task.FromResult<BehaviorPhase?>(BehaviorPhase.On);
 
-    public override bool When(BehaviourContext context) => context.Input is TInput input
+    public override bool When(BehaviorContext context) => context.Input is TInput input
         && When(context, input);
 
-    public virtual bool When(BehaviourContext context, TInput input) => true;
+    public virtual bool When(BehaviorContext context, TInput input) => true;
 
-    public override async Task<bool> WhenAsync(BehaviourContext context) => context.Input is TInput input
+    public override async Task<bool> WhenAsync(BehaviorContext context) => context.Input is TInput input
         && await WhenAsync(context, input);
 
-    public virtual Task<bool> WhenAsync(BehaviourContext context, TInput input) => Task.FromResult(true);
+    public virtual Task<bool> WhenAsync(BehaviorContext context, TInput input) => Task.FromResult(true);
 
-    public override BehaviourResult? Then(BehaviourContext context) => context.Input is TInput input
+    public override BehaviorResult? Then(BehaviorContext context) => context.Input is TInput input
         ? Then(context, input)
         : null;
 
-    public virtual BehaviourResult? Then(BehaviourContext context, TInput input) => null;
+    public virtual BehaviorResult? Then(BehaviorContext context, TInput input) => null;
 
-    public override Task<BehaviourResult?> ThenAsync(BehaviourContext context) => context.Input is TInput input
+    public override Task<BehaviorResult?> ThenAsync(BehaviorContext context) => context.Input is TInput input
         ? ThenAsync(context, input)
-        : Task.FromResult<BehaviourResult?>(null);
+        : Task.FromResult<BehaviorResult?>(null);
 
-    public virtual Task<BehaviourResult?> ThenAsync(BehaviourContext context, TInput input)
-        => Task.FromResult<BehaviourResult?>(null);
+    public virtual Task<BehaviorResult?> ThenAsync(BehaviorContext context, TInput input)
+        => Task.FromResult<BehaviorResult?>(null);
 }
 
-public partial class BehaviourRunner
+public partial class BehaviorRunner
 {
-    public async Task<BehaviourResult?> ExecuteAsync(BehaviourContext context, List<BehaviourFeature> features)
+    public async Task<BehaviorResult?> ExecuteAsync(BehaviorContext context, List<BehaviorFeature> features)
     {
         var loggerState = new Dictionary<string, object?>
         {
@@ -105,7 +105,7 @@ public partial class BehaviourRunner
 
         using var scope = context.Logger.BeginScope(loggerState);
 
-        var scenarios = new List<(BehaviourPhase?, BehaviourScenario)>();
+        var scenarios = new List<(BehaviorPhase?, BehaviorScenario)>();
 
         foreach (var feature in features)
         {
@@ -115,7 +115,7 @@ public partial class BehaviourRunner
                 {
                     var phase = scenario.Given(context) ?? await scenario.GivenAsync(context);
 
-                    if (phase is not null && phase != BehaviourPhase.None)
+                    if (phase is not null && phase != BehaviorPhase.None)
                     {
                         scenarios.Add((phase, scenario));
                     }
@@ -128,15 +128,15 @@ public partial class BehaviourRunner
             return default;
         }
 
-        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Initialize);
-        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.Before);
-        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.On);
-        await ExecuteScenariosAsync(context, scenarios, BehaviourPhase.After);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Initialize);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Before);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.On);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.After);
 
         return default;
     }
 
-    private static async Task ExecuteScenariosAsync(BehaviourContext context, List<(BehaviourPhase?, BehaviourScenario)> scenariosPhases, BehaviourPhase phase)
+    private static async Task ExecuteScenariosAsync(BehaviorContext context, List<(BehaviorPhase?, BehaviorScenario)> scenariosPhases, BehaviorPhase phase)
     {
         var scenarios = scenariosPhases.Where(s => s.Item1 == phase).Select(s => s.Item2).ToList();
 
@@ -159,7 +159,7 @@ public partial class BehaviourRunner
 
             var loggerState = new Dictionary<string, object?>
             {
-                { nameof(BehaviourPhase), phase }
+                { nameof(BehaviorPhase), phase }
             };
 
             using var scope = context.Logger.BeginScope(loggerState);
