@@ -48,7 +48,7 @@ public class SubmitApplication(IFeatureManager featureManager) : BehaviorFeature
 
 public class ProductLookup : BehaviorScenario
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Initialize;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.BeforePrepare;
 
     public override BehaviorResult? Then(BehaviorContext context)
     {
@@ -59,7 +59,7 @@ public class ProductLookup : BehaviorScenario
 
 public class ExistingUserRequired : BehaviorScenario
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Authorize;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.OnPrepare;
 
     public override bool When(BehaviorContext context)
         => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUser;
@@ -70,7 +70,7 @@ public class ExistingUserRequired : BehaviorScenario
 
 public class Validator<T> : BehaviorScenario<T>
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Validate;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.BeforeRun;
 
     public override BehaviorResult Then(BehaviorContext context, T input)
         => new() { IsComplete = true, Code = 400, Messages = [$"Validator error {Name}"] };
@@ -110,7 +110,7 @@ public class AuditLog : BehaviorScenario
 {
     private static readonly ConcurrentDictionary<string, string> Store = [];
 
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.After;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.AfterRun;
 
     public override BehaviorResult? Then(BehaviorContext context)
     {

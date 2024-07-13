@@ -13,7 +13,7 @@ public class BehaviorRunnerTests
         feature.GivenAsync(context).Returns(true);
         feature.Scenarios.Returns([scenario]);
 
-        scenario.Given(context).Returns(BehaviorPhase.On);
+        scenario.Given(context).Returns(BehaviorPhase.OnRun);
         scenario.When(context).Returns(true);
 
         var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);
@@ -40,19 +40,19 @@ public class BehaviorRunnerTests
         scenario1.Given(context).Returns(BehaviorPhase.None);
         scenario1.When(context).Returns(true);
 
-        scenario2.Given(context).Returns(BehaviorPhase.Before);
+        scenario2.Given(context).Returns(BehaviorPhase.BeforeRun);
         scenario2.When(context).Returns(true);
 
-        scenario3.Given(context).Returns(BehaviorPhase.On);
+        scenario3.Given(context).Returns(BehaviorPhase.OnRun);
         scenario3.When(context).Returns(true);
 
-        scenario4.Given(context).Returns(BehaviorPhase.On);
+        scenario4.Given(context).Returns(BehaviorPhase.OnRun);
         scenario4.When(context).Returns(true);
 
-        scenario5.Given(context).Returns(BehaviorPhase.On);
+        scenario5.Given(context).Returns(BehaviorPhase.OnRun);
         scenario5.When(context).Returns(false);
 
-        scenario6.Given(context).Returns(BehaviorPhase.After);
+        scenario6.Given(context).Returns(BehaviorPhase.AfterRun);
         scenario6.When(context).Returns(true);
 
         var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);
@@ -78,13 +78,13 @@ public class BehaviorRunnerTests
         feature.GivenAsync(context).Returns(true);
         feature.Scenarios.Returns([scenario1, scenario2, scenario3]);
 
-        scenario1.Given(context).Returns(BehaviorPhase.On);
+        scenario1.Given(context).Returns(BehaviorPhase.OnRun);
         scenario1.When(context).Returns(true);
 
-        scenario2.Given(context).Returns(BehaviorPhase.On);
+        scenario2.Given(context).Returns(BehaviorPhase.OnRun);
         scenario2.When(context).Returns(false);
 
-        scenario3.Given(context).Returns(BehaviorPhase.On);
+        scenario3.Given(context).Returns(BehaviorPhase.OnRun);
         scenario3.When(context).Returns(true);
 
         var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);
@@ -107,14 +107,14 @@ public class BehaviorRunnerTests
         feature.GivenAsync(context).Returns(true);
         feature.Scenarios.Returns([scenario1, scenario2, scenario3]);
 
-        scenario1.Given(context).Returns(BehaviorPhase.On);
+        scenario1.Given(context).Returns(BehaviorPhase.OnRun);
         scenario1.When(context).Returns(true);
 
-        scenario2.Given(context).Returns(BehaviorPhase.On);
+        scenario2.Given(context).Returns(BehaviorPhase.OnRun);
         scenario2.When(context).Returns(true);
         scenario2.Then(context).Throws<InvalidOperationException>();
 
-        scenario3.Given(context).Returns(BehaviorPhase.On);
+        scenario3.Given(context).Returns(BehaviorPhase.OnRun);
         scenario3.When(context).Returns(true);
 
         var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);
@@ -137,14 +137,14 @@ public class BehaviorRunnerTests
         feature.GivenAsync(context).Returns(true);
         feature.Scenarios.Returns([scenario1, scenario2, scenario3]);
 
-        scenario1.Given(context).Returns(BehaviorPhase.On);
+        scenario1.Given(context).Returns(BehaviorPhase.OnRun);
         scenario1.When(context).Returns(true);
 
-        scenario2.Given(context).Returns(BehaviorPhase.On);
+        scenario2.Given(context).Returns(BehaviorPhase.OnRun);
         scenario2.When(context).Returns(true);
         scenario2.Then(context).Returns(new BehaviorResult { IsComplete = true });
 
-        scenario3.Given(context).Returns(BehaviorPhase.On);
+        scenario3.Given(context).Returns(BehaviorPhase.OnRun);
         scenario3.When(context).Returns(true);
 
         var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);
@@ -177,13 +177,13 @@ public class BehaviorRunnerTests
         feature3.GivenAsync(context).Returns(true);
         feature3.Scenarios.Returns([scenario3]);
 
-        scenario1.Given(context).Returns(BehaviorPhase.On);
+        scenario1.Given(context).Returns(BehaviorPhase.OnRun);
         scenario1.When(context).Returns(true);
 
-        scenario2.Given(context).Returns(BehaviorPhase.On);
+        scenario2.Given(context).Returns(BehaviorPhase.OnRun);
         scenario2.When(context).Returns(true);
 
-        scenario3.Given(context).Returns(BehaviorPhase.On);
+        scenario3.Given(context).Returns(BehaviorPhase.OnRun);
         scenario3.When(context).Returns(true);
 
         var result = await new BehaviorRunner().ExecuteAsync(context, [feature1, feature2, feature3]);
@@ -207,11 +207,11 @@ public class BehaviorRunnerTests
         feature.Scenarios.Returns([scenario1, scenario2]);
 
         scenario1.Name.Returns(nameof(scenario1));
-        scenario1.Given(context).Returns(BehaviorPhase.On);
+        scenario1.Given(context).Returns(BehaviorPhase.OnRun);
         scenario1.When(context).Returns(true);
 
         scenario2.Name.Returns(nameof(scenario2));
-        scenario2.Given(context).Returns(BehaviorPhase.On);
+        scenario2.Given(context).Returns(BehaviorPhase.OnRun);
         scenario2.When(context).Returns(true);
 
         var result = await new BehaviorRunner().ExecuteAsync(context, [feature]);

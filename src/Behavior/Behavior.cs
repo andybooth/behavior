@@ -26,12 +26,12 @@ public class BehaviorResult
 public enum BehaviorPhase
 {
     None,
-    Initialize,
-    Authorize,
-    Validate,
-    Before,
-    On,
-    After
+    BeforePrepare,
+    OnPrepare,
+    AfterPrepare,
+    BeforeRun,
+    OnRun,
+    AfterRun
 }
 
 public abstract class BehaviorFeature
@@ -57,8 +57,8 @@ public abstract class BehaviorFeature<TInput> : BehaviorFeature
 public abstract class BehaviorScenario
 {
     public virtual string Name => GetType().Name;
-    public virtual BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.On;
-    public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context) => Task.FromResult<BehaviorPhase?>(BehaviorPhase.On);
+    public virtual BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.OnRun;
+    public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context) => Task.FromResult<BehaviorPhase?>(BehaviorPhase.OnRun);
     public virtual bool When(BehaviorContext context) => true;
     public virtual Task<bool> WhenAsync(BehaviorContext context) => Task.FromResult(true);
     public virtual BehaviorResult? Then(BehaviorContext context) => null;
@@ -69,9 +69,10 @@ public abstract class BehaviorScenario<TInput> : BehaviorScenario
 {
     public override async Task<BehaviorPhase?> GivenAsync(BehaviorContext context) => context.Input is TInput input
         ? await GivenAsync(context, input)
-        : BehaviorPhase.None;
+        : null;
 
-    public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context, TInput input) => Task.FromResult<BehaviorPhase?>(BehaviorPhase.On);
+    public virtual Task<BehaviorPhase?> GivenAsync(BehaviorContext context, TInput input)
+        => Task.FromResult<BehaviorPhase?>(BehaviorPhase.OnRun);
 
     public override bool When(BehaviorContext context) => context.Input is TInput input
         && When(context, input);
@@ -133,12 +134,12 @@ public partial class BehaviorRunner
             return default;
         }
 
-        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Initialize);
-        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Authorize);
-        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Validate);
-        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Before);
-        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.On);
-        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.After);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.BeforePrepare);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.OnPrepare);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.AfterPrepare);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.BeforeRun);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.OnRun);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.AfterRun);
 
         return default;
     }
