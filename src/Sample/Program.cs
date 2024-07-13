@@ -16,10 +16,10 @@ api.MapPost("/{applicationId}", async (string applicationId, Application applica
         Resource = applicationId
     };
 
-    var result = await new FeatureManagementBehaviourRunner(featureManager)
-        .ExecuteAsync(context, [new SubmitApplication()]);
+    var result = await new BehaviourRunner()
+        .ExecuteAsync(context, [new SubmitApplication(featureManager)]);
 
-    return Results.Ok(result.Output);
+    return Results.Ok(result?.Output);
 });
 
 app.Run();
@@ -30,8 +30,11 @@ public record Product(bool ExistingUsers, int MinimumAge);
 
 public record CreatedApplicationEvent(string applicationId);
 
-public class SubmitApplication : BehaviourFeature<Application>
+public class SubmitApplication(IFeatureManager featureManager) : BehaviourFeature<Application>
 {
+    public override Task<bool> GivenAsync(BehaviourContext context)
+        => featureManager.IsEnabledAsync(nameof(SubmitApplication));
+
     public override List<BehaviourScenario> Scenarios => [
         new ProductLookup(),
         new AuthorizationPolicy(),
@@ -44,58 +47,58 @@ public class SubmitApplication : BehaviourFeature<Application>
 
 public class ProductLookup : BehaviourScenario
 {
-    public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Initialize;
+    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Initialize;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
+    public override BehaviourResult? Then(BehaviourContext context)
     {
         context.Set(new Product(ExistingUsers: true, MinimumAge: 18));
-        return context.Next();
+        return default;
     }
 }
 
 public class AuthorizationPolicy : BehaviourScenario
 {
-    public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Before;
+    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Before;
 
     public override bool When(BehaviourContext context)
         => context.Principal?.Identity?.IsAuthenticated == context.Get<Product>().ExistingUsers;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
-        => context.Complete(code: 401);
+    public override BehaviourResult? Then(BehaviourContext context)
+        => new() { IsComplete = true, Code = 401 };
 }
 
 public class AgeRestriction : BehaviourScenario<Application>
 {
-    public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Before;
+    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Before;
 
     public override bool When(BehaviourContext context, Application input)
         => input.Age < context.Get<Product>().MinimumAge;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
-        => context.Complete(code: 400, message: $"Minimum age {context.Get<Product>().MinimumAge}");
+    public override BehaviourResult? Then(BehaviourContext context, Application input)
+        => new() { IsComplete = true, Code = 400, Messages = [$"Minimum age {context.Get<Product>().MinimumAge}"] };
 }
 
 public class ApplicationValidation : BehaviourScenario<Application>
 {
-    public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.Before;
+    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.Before;
 
     public override bool When(BehaviourContext context, Application input)
         => input.FirstName is null || input.LastName is null;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
-        => context.Complete(code: 400, message: "First and last name required");
+    public override BehaviourResult Then(BehaviourContext context, Application input)
+        => new() { IsComplete = true, Code = 400, Messages = ["First name and last name required"] };
 }
 
 public class ApplicationStore : BehaviourScenario<Application>
 {
     private static readonly ConcurrentDictionary<string, Application> Store = [];
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context, Application input)
+    public override BehaviourResult? Then(BehaviourContext context, Application input)
     {
         var applicationId = context.Resource!;
         Store[applicationId] = input;
         context.Append(new CreatedApplicationEvent(applicationId));
-        return context.Next(code: 200, output: applicationId);
+        return new() { Output = applicationId };
     }
 }
 
@@ -103,18 +106,13 @@ public class AuditLog : BehaviourScenario
 {
     private static readonly ConcurrentDictionary<string, string> Store = [];
 
-    public override BehaviourPhase Given(BehaviourContext context) => BehaviourPhase.After;
+    public override BehaviourPhase? Given(BehaviourContext context) => BehaviourPhase.After;
 
-    public override Task<BehaviourResult> ThenAsync(BehaviourContext context)
+    public override BehaviourResult? Then(BehaviourContext context)
     {
         Store[context.CorrelationId] = $"Application {context.Result!.Output} created by {context.Principal!.Identity!.Name}";
-        return base.ThenAsync(context);
+        return default;
     }
-}
-
-public class FeatureManagementBehaviourRunner(IFeatureManager featureManager) : BehaviourRunner
-{
-    public override Task<bool> IsEnabledAsync(string featureName) => featureManager.IsEnabledAsync(featureName);
 }
 
 public static class BehaviourContextExtensions
