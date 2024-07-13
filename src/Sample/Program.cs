@@ -26,7 +26,7 @@ app.Run();
 
 public record Application(string FirstName, string LastName, int Age);
 
-public record Product(bool ExistingUsers, int MinimumAge);
+public record Product(bool ExistingUser, int MinimumAge);
 
 public record CreatedApplicationEvent(string applicationId);
 
@@ -37,11 +37,11 @@ public class SubmitApplication(IFeatureManager featureManager) : BehaviorFeature
 
     public override List<BehaviorScenario> Scenarios => [
         new ProductLookup(),
-        new AuthorizationPolicy(),
+        new ExistingUserRequired(),
         new FirstNameRequired(),
         new LastNameRequired(),
         new MinimumAge(),
-        new ApplicationStore(),
+        new StoreApplication(),
         new AuditLog()
     ];
 }
@@ -52,17 +52,17 @@ public class ProductLookup : BehaviorScenario
 
     public override BehaviorResult? Then(BehaviorContext context)
     {
-        context.SetState(new Product(ExistingUsers: true, MinimumAge: 18));
+        context.SetState(new Product(ExistingUser: true, MinimumAge: 18));
         return default;
     }
 }
 
-public class AuthorizationPolicy : BehaviorScenario
+public class ExistingUserRequired : BehaviorScenario
 {
     public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Authorize;
 
     public override bool When(BehaviorContext context)
-        => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUsers;
+        => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUser;
 
     public override BehaviorResult? Then(BehaviorContext context)
         => new() { IsComplete = true, Code = 401 };
@@ -94,7 +94,7 @@ public class MinimumAge : Validator<Application>
         => input.Age < context.GetState<Product>().MinimumAge;
 }
 
-public class ApplicationStore : BehaviorScenario<Application>
+public class StoreApplication : BehaviorScenario<Application>
 {
     private static readonly ConcurrentDictionary<string, Application> Store = [];
 
