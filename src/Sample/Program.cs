@@ -58,7 +58,7 @@ public class ProductLookup : BehaviorScenario
 
 public class AuthorizationPolicy : BehaviorScenario
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Authorize;
 
     public override bool When(BehaviorContext context)
         => context.Principal?.Identity?.IsAuthenticated == context.GetState<Product>().ExistingUsers;
@@ -69,7 +69,7 @@ public class AuthorizationPolicy : BehaviorScenario
 
 public class AgeRestriction : BehaviorScenario<Application>
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Validate;
 
     public override bool When(BehaviorContext context, Application input)
         => input.Age < context.GetState<Product>().MinimumAge;
@@ -80,7 +80,7 @@ public class AgeRestriction : BehaviorScenario<Application>
 
 public class ApplicationValidation : BehaviorScenario<Application>
 {
-    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Before;
+    public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.Validate;
 
     public override bool When(BehaviorContext context, Application input)
         => input.FirstName is null || input.LastName is null;

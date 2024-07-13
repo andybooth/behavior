@@ -27,6 +27,8 @@ public enum BehaviorPhase
 {
     None,
     Initialize,
+    Authorize,
+    Validate,
     Before,
     On,
     After
@@ -118,7 +120,7 @@ public partial class BehaviorRunner
                 {
                     var phase = scenario.Given(context) ?? await scenario.GivenAsync(context);
 
-                    if (phase is not null && phase != BehaviorPhase.None)
+                    if (phase is not null && phase is not BehaviorPhase.None)
                     {
                         scenarios.Add((phase, scenario));
                     }
@@ -132,6 +134,8 @@ public partial class BehaviorRunner
         }
 
         await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Initialize);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Authorize);
+        await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Validate);
         await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.Before);
         await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.On);
         await ExecuteScenariosAsync(context, scenarios, BehaviorPhase.After);
