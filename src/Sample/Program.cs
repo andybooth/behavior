@@ -46,15 +46,17 @@ public class SubmitApplication(IFeatureManager featureManager) : BehaviorFeature
     ];
 }
 
-public class ProductLookup : BehaviorScenario
+public abstract class Lookup<T> : BehaviorScenario
 {
     public override BehaviorPhase? Given(BehaviorContext context) => BehaviorPhase.OnPrepare;
 
-    public override BehaviorResult? Then(BehaviorContext context)
+    public override async Task<BehaviorResult?> ThenAsync(BehaviorContext context)
     {
-        context.SetState(new Product(ExistingUser: true, MinimumAge: 18));
+        context.SetState(await LookupAsync(context));
         return default;
     }
+
+    public abstract Task<T> LookupAsync(BehaviorContext context);
 }
 
 public class Authorizer : BehaviorScenario
@@ -71,6 +73,15 @@ public class Validator<T> : BehaviorScenario<T>
 
     public override BehaviorResult Then(BehaviorContext context, T input)
         => new() { IsComplete = true, Code = 400, Messages = [$"Validator error {Name}"] };
+}
+
+public class ProductLookup : Lookup<Product>
+{
+    public override Task<Product> LookupAsync(BehaviorContext context)
+    {
+        var product = new Product(ExistingUser: true, MinimumAge: 18);
+        return Task.FromResult(product);
+    }
 }
 
 public class ExistingUserRequired : Authorizer
