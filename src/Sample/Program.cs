@@ -40,7 +40,7 @@ public class SubmitApplication(IFeatureManager featureManager) : BehaviorFeature
         new AuthorizationPolicy(),
         new FirstNameRequired(),
         new LastNameRequired(),
-        new AgeRestriction(),
+        new MinimumAge(),
         new ApplicationStore(),
         new AuditLog()
     ];
@@ -88,7 +88,7 @@ public class LastNameRequired : Validator<Application>
         => input.LastName is null;
 }
 
-public class AgeRestriction : Validator<Application>
+public class MinimumAge : Validator<Application>
 {
     public override bool When(BehaviorContext context, Application input)
         => input.Age < context.GetState<Product>().MinimumAge;
